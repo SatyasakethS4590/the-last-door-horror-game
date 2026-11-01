@@ -125,11 +125,11 @@ function heartbeat(){if(!audioCtx)return;const now=audioCtx.currentTime,osc=audi
 const lamp=new THREE.SpotLight(0xd9e8ff,3,24,Math.PI/7,.45);camera.add(lamp);camera.add(lamp.target);lamp.target.position.set(0,0,-1);scene.add(camera);
 function say(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>$('message').style.opacity=0,3400)}
 function refresh(){ $('caseText').innerHTML='<p><b>MEMORIES: '+solved+'/5</b></p>'+labels.map((x,i)=>'<p><b>'+(clueObjects[i].found?'✓ ':'? ')+x+'</b><br>'+(clueObjects[i].found?clueObjects[i].story:'Not discovered yet.')+'</p>').join('')+'<hr><p>FLOOR 1: 9 rooms · FLOOR 2: 9 rooms · FLOOR 3: 7 rooms</p>'}
-function changeFloor(f){currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
+let previousFloor=0;\nfunction changeFloor(f){previousFloor=currentFloor;currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
 loadProgress();
 $('enter').onclick=()=>{$('start').style.display='none';started=true;camera.position.set(-12,1.65,-12);startAudio();renderer.domElement.requestPointerLock?.();say('The mansion door closes behind you.')};
 $('close').onclick=()=>{$('case').style.display='none';renderer.domElement.requestPointerLock?.()};
-addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});
+addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});\nrenderer.domElement.addEventListener('click',()=>{if(started&&$('case').style.display!=='block'&&matchMedia('(pointer:fine)').matches&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.()});
 addEventListener('keydown',e=>{
  keys[e.code]=true;
  if(e.code==='KeyF'){flashOn=!flashOn;lamp.intensity=flashOn?3:0}
@@ -143,7 +143,7 @@ addEventListener('keydown',e=>{
   const nearbyHide=hideSpots.find(h=>h.floor===currentFloor&&Math.hypot(camera.position.x-h.x,camera.position.z-h.z)<2.2);
   if(nearbyHide){hiding=true;hideSpot=nearbyHide;camera.position.set(nearbyHide.x,nearbyHide.floor*5.2+1.65,nearbyHide.z);say('You hide in the wardrobe. Press E to leave.');return}
   const stair=stairMarkers.findIndex(r=>r.floor===currentFloor&&Math.hypot(camera.position.x-r.x,camera.position.z-r.z)<3);
-  if(stair>=0){if(currentFloor===0)changeFloor(1);else if(currentFloor===1)changeFloor(2);else changeFloor(1);return}
+  if(stair>=0){if(currentFloor===0)changeFloor(1);else if(currentFloor===1)changeFloor(previousFloor===2?0:2);else changeFloor(1);return}
   if(currentFloor===0&&nearPosition(libraryRoom.x,libraryRoom.z,2.6)){say('The library inscription reads: “The second, the first, then the third.” Enter the sequence with keys 2, 1, 3.');return}
   if(currentFloor===0&&nearPosition(studyRoom.x,studyRoom.z,2.8)&&puzzleSolved&&!hasArchiveKey&&nearPosition(studyRoom.x+2,studyRoom.z,2.5)){hasArchiveKey=true;keyMesh.visible=false;saveProgress();say('You collected the old archive key.');return}
   if(currentFloor===2&&nearPosition(archiveRoom.x,archiveRoom.z+5.7,3)){
