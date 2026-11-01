@@ -32,7 +32,7 @@ for(let f=0;f<3;f++)for(let i=0;i<roomNames[f].length;i++){
 }
 const roomAt=(f,x,z)=>roomDefs.find(r=>r.floor===f&&Math.abs(r.x-x)<5.9&&Math.abs(r.z-z)<5.9);
 const wallSegments=[];
-function addWall(x,y,z,w,h,d,level){box(x,y,z,w,h,d,wallMat[level]);if(h>1.5)wallSegments.push({x,z,w,d})}
+function addWall(x,y,z,w,h,d,level){box(x,y,z,w,h,d,wallMat[level]);if(h>1.5)wallSegments.push({x,z,w,d,floor:level})}
 for(const r of roomDefs){
  const {x,z,y,floor}=r;box(x,y-.18,z,11.8,.36,11.8,floorMat[floor]);box(x,y+4.1,z,11.8,.2,11.8,mat(0x171a20));
  // Each shared wall has a centered doorway. Outer walls remain closed.
@@ -62,9 +62,9 @@ const hideSpots=[[0,6],[1,0],[1,1],[1,2],[2,3]].map(([floor,index])=>{
  box(r.x+4,r.y+1.25,r.z+.57,.08,2.35,.08,mat(0x6a5036));
  return {floor,x:r.x+4,z:r.z+2.1,wardrobe};
 });
-function blocked(x,z){
+function blocked(x,z,floor){
  const radius=.42;
- return wallSegments.some(w=>{
+ return wallSegments.some(w=>{\n  if(w.floor!==floor)return false;
   const nx=THREE.MathUtils.clamp(x,w.x-w.w/2,w.x+w.w/2);
   const nz=THREE.MathUtils.clamp(z,w.z-w.d/2,w.z+w.d/2);
   return (x-nx)**2+(z-nz)**2<radius*radius;
@@ -72,8 +72,8 @@ function blocked(x,z){
 }
 function movePlayer(dx,dz){
  const nx=camera.position.x+dx,nz=camera.position.z+dz;
- if(!blocked(nx,camera.position.z))camera.position.x=THREE.MathUtils.clamp(nx,-17.25,17.25);
- if(!blocked(camera.position.x,nz))camera.position.z=THREE.MathUtils.clamp(nz,-17.25,17.25);
+ if(!blocked(nx,camera.position.z,currentFloor))camera.position.x=THREE.MathUtils.clamp(nx,-17.25,17.25);
+ if(!blocked(camera.position.x,nz,currentFloor))camera.position.z=THREE.MathUtils.clamp(nz,-17.25,17.25);
 }
 function saveProgress(){
  try{localStorage.setItem('theLastDoorProgress',JSON.stringify({found:clueObjects.map(c=>c.found),hasArchiveKey,puzzleSolved}))}catch(e){}
@@ -82,7 +82,7 @@ function loadProgress(){
  try{
   const data=JSON.parse(localStorage.getItem('theLastDoorProgress')||'null');
   if(!data||!Array.isArray(data.found))return;
-  data.found.forEach((found,i)=>{if(found&&clueObjects[i]){clueObjects[i].found=true;clueObjects[i].mesh.visible=false;solved++;if(ghosts[i]){ghosts[i].active=true;ghosts[i].mesh.visible=true}}});hasArchiveKey=!!data.hasArchiveKey;puzzleSolved=!!data.puzzleSolved;keyMesh.visible=puzzleSolved&&!hasArchiveKey;
+  data.found.forEach((found,i)=>{if(found&&clueObjects[i]){clueObjects[i].found=true;clueObjects[i].mesh.visible=false;solved++;if(ghosts[i]){ghosts[i].active=true;ghosts[i].mesh.visible=true}}});hasArchiveKey=!!data.hasArchiveKey;puzzleSolved=!!data.puzzleSolved;archiveUnlocked=!!data.archiveUnlocked;keyMesh.visible=puzzleSolved&&!hasArchiveKey;if(archiveUnlocked){archiveDoor.visible=false;const wallIndex=wallSegments.indexOf(archiveDoorCollision);if(wallIndex>=0)wallSegments.splice(wallIndex,1)}
   refresh();
   $('task').textContent='OBJECTIVE: Family memories '+solved+'/5';
  }catch(e){}
@@ -99,7 +99,7 @@ const clues=[
 {room:[2,3],pos:[-12,10.4,0],story:'The father’s watch stopped at the exact minute the family disappeared.'},
 {room:[2,6],pos:[12,10.4,0],story:'The portrait reveals the truth: all five spirits belonged to one family.'}
 ];
-const puzzleSequence=['2','1','3'];let puzzleStep=0,puzzleSolved=false,hasArchiveKey=false;
+const puzzleSequence=['2','1','3'];let puzzleStep=0,puzzleSolved=false,hasArchiveKey=false,archiveUnlocked=false;
 const libraryRoom=roomDefs.find(r=>r.floor===0&&r.index===4);
 const studyRoom=roomDefs.find(r=>r.floor===0&&r.index===5);
 const archiveRoom=roomDefs.find(r=>r.floor===2&&r.index===2);
@@ -110,7 +110,7 @@ keyRing.position.y=.8;keyMesh.add(keyRing);
 const keyStem=box(0,0,0,.08,.55,.08,mat(0xd1a94f));keyStem.position.y=.48;keyMesh.add(keyStem);
 keyMesh.position.set(studyRoom.x+2,studyRoom.y,studyRoom.z);keyMesh.visible=false;scene.add(keyMesh);
 const archiveDoor=box(archiveRoom.x,archiveRoom.y+1.55,archiveRoom.z+5.72,2.8,3.1,.22,mat(0x33251b));
-const archiveDoorCollision={x:archiveRoom.x,z:archiveRoom.z+5.72,w:2.8,d:.22};wallSegments.push(archiveDoorCollision);
+const archiveDoorCollision={x:archiveRoom.x,z:archiveRoom.z+5.72,w:2.8,d:.22,floor:2};wallSegments.push(archiveDoorCollision);
 function nearPosition(x,z,range=2.5){return Math.hypot(camera.position.x-x,camera.position.z-z)<range}
 const clueObjects=clues.map((c,i)=>{const r=roomDefs.find(x=>x.floor===c.room[0]&&x.index===c.room[1]);const g=new THREE.Group();const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.38),new THREE.MeshStandardMaterial({color:0xd3bd8b,emissive:0x58401b}));orb.position.y=1;g.add(orb);const l=new THREE.PointLight(0xd8bd83,.8,4);l.position.y=1;g.add(l);g.position.set(r.x,r.y,r.z);scene.add(g);return {mesh:g,found:false,story:c.story}});
 function makeGhost(color,pos,speed,kind){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.ConeGeometry(.55,1.7,16,1,true),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.56,side:THREE.DoubleSide}));body.position.y=.75;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshBasicMaterial({color:0xe4e9ed,transparent:true,opacity:.8}));head.position.y=1.65;g.add(head);g.position.copy(pos);g.visible=false;scene.add(g);return {mesh:g,speed,kind,active:false,recovering:false,phase:Math.random()*4,home:pos.clone(),vanishClock:5,ambushClock:10,investigateClock:0}}
@@ -142,7 +142,7 @@ addEventListener('keydown',e=>{
   if(currentFloor===0&&nearPosition(studyRoom.x,studyRoom.z,2.8)&&puzzleSolved&&!hasArchiveKey&&nearPosition(studyRoom.x+2,studyRoom.z,2.5)){hasArchiveKey=true;keyMesh.visible=false;saveProgress();say('You collected the old archive key.');return}
   if(currentFloor===2&&nearPosition(archiveRoom.x,archiveRoom.z+5.7,3)){
    if(!hasArchiveKey){say('The archive is locked. Find the key hidden in the study.');return}
-   archiveDoor.visible=false;const idx=wallSegments.indexOf(archiveDoorCollision);if(idx>=0)wallSegments.splice(idx,1);say('The archive door unlocks with a quiet click.');return
+   archiveDoor.visible=false;archiveUnlocked=true;const idx=wallSegments.indexOf(archiveDoorCollision);if(idx>=0)wallSegments.splice(idx,1);saveProgress();say('The archive door unlocks with a quiet click.');return
   }
   const near=clueObjects.findIndex(c=>!c.found&&camera.position.distanceTo(c.mesh.position)<2.5);
   if(near>=0){if(near===4&&solved<4){say('The portrait is sealed. Find the four family memories first.');return}clueObjects[near].found=true;clueObjects[near].mesh.visible=false;solved++;saveProgress();if(near<4){ghosts[near].active=true;ghosts[near].mesh.visible=true}else ghosts[4].active=true;refresh();say(clueObjects[near].story);$('task').textContent=solved===5?'OBJECTIVE: Return to the final room':'OBJECTIVE: Family memories '+solved+'/5';return}
