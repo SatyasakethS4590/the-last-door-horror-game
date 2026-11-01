@@ -100,8 +100,8 @@ const clues=[
 {room:[2,6],pos:[12,10.4,0],story:'The portrait reveals the truth: all five spirits belonged to one family.'}
 ];
 const clueObjects=clues.map((c,i)=>{const r=roomDefs.find(x=>x.floor===c.room[0]&&x.index===c.room[1]);const g=new THREE.Group();const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.38),new THREE.MeshStandardMaterial({color:0xd3bd8b,emissive:0x58401b}));orb.position.y=1;g.add(orb);const l=new THREE.PointLight(0xd8bd83,.8,4);l.position.y=1;g.add(l);g.position.set(r.x,r.y,r.z);scene.add(g);return {mesh:g,found:false,story:c.story}});
-function makeGhost(color,pos,speed){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.ConeGeometry(.55,1.7,16,1,true),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.56,side:THREE.DoubleSide}));body.position.y=.75;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshBasicMaterial({color:0xe4e9ed,transparent:true,opacity:.8}));head.position.y=1.65;g.add(head);g.position.copy(pos);g.visible=false;scene.add(g);return {mesh:g,speed,active:false,recovering:false}}
-const ghosts=[makeGhost(0xb8c7d4,new THREE.Vector3(-12,0,-12),.7),makeGhost(0x9fb8c9,new THREE.Vector3(0,5.2,-12),.85),makeGhost(0xc8c4dc,new THREE.Vector3(12,5.2,-12),.65),makeGhost(0xb8b0a0,new THREE.Vector3(-12,10.4,0),.9),makeGhost(0xd9e7f5,new THREE.Vector3(12,10.4,0),1.05)];
+function makeGhost(color,pos,speed,kind){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.ConeGeometry(.55,1.7,16,1,true),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.56,side:THREE.DoubleSide}));body.position.y=.75;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshBasicMaterial({color:0xe4e9ed,transparent:true,opacity:.8}));head.position.y=1.65;g.add(head);g.position.copy(pos);g.visible=false;scene.add(g);return {mesh:g,speed,kind,active:false,recovering:false,phase:Math.random()*4,home:pos.clone(),vanishClock:5,ambushClock:10,investigateClock:0}}
+const ghosts=[makeGhost(0xb8c7d4,new THREE.Vector3(-12,0,-12),.7,'stalker'),makeGhost(0x9fb8c9,new THREE.Vector3(0,5.2,-12),.85,'investigator'),makeGhost(0xc8c4dc,new THREE.Vector3(12,5.2,-12),.65,'vanisher'),makeGhost(0xb8b0a0,new THREE.Vector3(-12,10.4,0),.9,'ambusher'),makeGhost(0xd9e7f5,new THREE.Vector3(12,10.4,0),1.05,'keeper')];
 const keys={};let started=false,flashOn=true,hiding=false,hideSpot=null,solved=0,yaw=0,pitch=0,beat=0,currentFloor=0,currentRoom=null;const clock=new THREE.Clock();const $=id=>document.getElementById(id);
 const lamp=new THREE.SpotLight(0xd9e8ff,3,24,Math.PI/7,.45);camera.add(lamp);camera.add(lamp.target);lamp.target.position.set(0,0,-1);scene.add(camera);
 function say(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>$('message').style.opacity=0,3400)}
@@ -138,10 +138,30 @@ function animate(){
   }
   const room=roomAt(currentFloor,camera.position.x,camera.position.z);
   if(room&&room!==currentRoom){currentRoom=room;$('room').textContent='FLOOR '+(currentFloor+1)+' · '+room.name;if(room.index%3===1)say(room.story)}
-  // Ghosts pursue the player on their own floor; hiding pauses pursuit.
+  // Each family spirit now uses a different encounter pattern.
   let nearest=99;
-  ghosts.forEach((g,i)=>{if(!g.active||!g.mesh.visible)return;const p=new THREE.Vector3(camera.position.x-g.mesh.position.x,0,camera.position.z-g.mesh.position.z);const d=p.length();nearest=Math.min(nearest,d);if(!hiding&&currentFloor===Math.floor(g.mesh.position.y/5.2)&&d>1.5)g.mesh.position.add(p.normalize().multiplyScalar(g.speed*dt));g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);if(!hiding&&currentFloor===Math.floor(g.mesh.position.y/5.2)&&d<1.2&&!g.recovering){g.recovering=true;g.mesh.visible=false;camera.position.set(-12,currentFloor*5.2+1.65,-12);say('A sudden chill. You are back near the staircase.');setTimeout(()=>{g.mesh.visible=true;g.recovering=false},4000)}});
-  if(nearest<8){beat-=dt;if(beat<=0){say('You hear a distant whisper...');beat=THREE.MathUtils.mapLinear(Math.min(nearest,8),8,1,1.1,.4)}$('pulse').style.boxShadow='inset 0 0 '+Math.round((8-nearest)*6)+'px rgba(130,0,20,.3)'}else $('pulse').style.boxShadow='none';
+  ghosts.forEach((g)=>{
+   if(!g.active||g.recovering)return;
+   const floor=Math.round(g.mesh.position.y/5.2);
+   if(floor!==currentFloor)return;
+   const p=new THREE.Vector3(camera.position.x-g.mesh.position.x,0,camera.position.z-g.mesh.position.z);
+   const d=p.length();nearest=Math.min(nearest,d);g.phase+=dt;
+   if(g.kind==='vanisher'){
+    g.vanishClock-=dt;
+    if(g.vanishClock<=0){g.mesh.visible=!g.mesh.visible;g.vanishClock=g.mesh.visible?4.5:2.2;if(g.mesh.visible){g.mesh.position.set(g.home.x+Math.sin(g.phase)*2,g.home.y,g.home.z+Math.cos(g.phase)*2);say('A shape flickers at the edge of your vision.')}}
+   }
+   if(g.kind==='ambusher'){g.ambushClock-=dt;if(g.ambushClock<=0&&!hiding){const a=Math.atan2(p.z,p.x);g.mesh.position.set(camera.position.x-Math.cos(a)*5,g.home.y,camera.position.z-Math.sin(a)*5);g.ambushClock=12;say('Footsteps stop behind you.')}}
+   let chase=!hiding,speed=g.speed;
+   if(g.kind==='stalker'){chase=chase&&d<14;if(flashOn&&d<7)speed*=.35}
+   if(g.kind==='investigator'){g.investigateClock+=dt;chase=chase&&d<10&&g.investigateClock>1.8;if(d>10){g.mesh.position.x=g.home.x+Math.sin(g.phase*.35)*2;g.mesh.position.z=g.home.z+Math.cos(g.phase*.35)*2}}
+   if(g.kind==='vanisher')chase=chase&&g.mesh.visible&&d<9;
+   if(g.kind==='ambusher')chase=chase&&d<12;
+   if(g.kind==='keeper'){chase=!hiding;speed*=1.25;if(d>8&&g.ambushClock<0){g.mesh.position.set(camera.position.x+5,g.home.y,camera.position.z+4);g.ambushClock=10}}
+   if(chase&&d>1.45&&g.mesh.visible){const step=p.normalize().multiplyScalar(speed*dt);g.mesh.position.x+=step.x;g.mesh.position.z+=step.z}
+   g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);
+   if(!hiding&&d<1.2){g.recovering=true;g.mesh.visible=false;camera.position.set(-12,currentFloor*5.2+1.65,-12);say('The spirit rushes past. You awaken near the staircase.');g.mesh.position.copy(g.home);g.investigateClock=0;g.vanishClock=5;g.ambushClock=12;setTimeout(()=>{g.mesh.visible=true;g.recovering=false},3500)}
+  });
+  if(nearest<9){beat-=dt;if(beat<=0){say(nearest<3?'Your heartbeat pounds in the silence.':'You hear a faint whisper nearby.');beat=THREE.MathUtils.mapLinear(Math.min(nearest,9),9,1,1.25,.38)}$('pulse').style.boxShadow='inset 0 0 '+Math.round((9-nearest)*5)+'px rgba(130,0,20,.32)'}else $('pulse').style.boxShadow='none';
  }
  renderer.render(scene,camera);
 }
