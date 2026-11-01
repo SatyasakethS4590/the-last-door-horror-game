@@ -32,7 +32,7 @@ for(let f=0;f<3;f++)for(let i=0;i<roomNames[f].length;i++){
 }
 const roomAt=(f,x,z)=>roomDefs.find(r=>r.floor===f&&Math.abs(r.x-x)<5.9&&Math.abs(r.z-z)<5.9);
 const wallSegments=[];
-function addWall(x,y,z,w,h,d,level){box(x,y,z,w,h,d,wallMat[level]);wallSegments.push({x,z,w,d})}
+function addWall(x,y,z,w,h,d,level){box(x,y,z,w,h,d,wallMat[level]);if(h>1.5)wallSegments.push({x,z,w,d})}
 for(const r of roomDefs){
  const {x,z,y,floor}=r;box(x,y-.18,z,11.8,.36,11.8,floorMat[floor]);box(x,y+4.1,z,11.8,.2,11.8,mat(0x171a20));
  // Each shared wall has a centered doorway. Outer walls remain closed.
