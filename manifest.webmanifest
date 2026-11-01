@@ -1,0 +1,17 @@
+{
+  "name": "THE LAST DOOR",
+  "short_name": "Last Door",
+  "description": "A first-person mystery horror prototype.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050609",
+  "theme_color": "#050609",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
