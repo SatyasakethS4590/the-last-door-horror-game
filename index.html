@@ -1,69 +1,114 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050609"><meta name="description" content="THE LAST DOOR — a mystery horror prototype"><link rel="manifest" href="./manifest.webmanifest"><title>THE LAST DOOR</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050609"><meta name="description" content="THE LAST DOOR — a three-floor, 25-room mystery horror game"><link rel="manifest" href="./manifest.webmanifest"><title>THE LAST DOOR</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050609;color:#e8edf2;font-family:Georgia,serif}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 1px 8px #000}#name{position:absolute;top:18px;left:20px;letter-spacing:4px;font-size:19px}#task{position:absolute;top:52px;left:20px;font:13px Arial}#hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font:13px Arial;text-align:center;width:95%}#pulse{position:absolute;inset:0;box-shadow:inset 0 0 0 transparent}#cross{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#fff}#message{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);font-size:22px;text-align:center;max-width:85%;opacity:0}#start{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:#03050aee}#panel{max-width:540px;margin:20px;padding:30px;text-align:center;background:#0b1119;border:1px solid #697887}h1{letter-spacing:6px}p{font:15px/1.6 Arial;color:#c5ced7}button{padding:13px 22px;background:#1d2a36;color:white;border:1px solid #aab8c5;cursor:pointer;letter-spacing:2px}#case{display:none;position:fixed;z-index:6;inset:12%;overflow:auto;padding:22px;background:#080c12f5;border:1px solid #8899aa;font:14px/1.6 Arial;pointer-events:auto}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050609;color:#edf1f5;font-family:Georgia,serif}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 1px 8px #000}#name{position:absolute;top:16px;left:18px;letter-spacing:3px;font-size:18px}#task{position:absolute;top:45px;left:18px;font:13px Arial}#room{position:absolute;top:16px;right:18px;text-align:right;font:13px Arial}#hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font:13px Arial;text-align:center;width:95%}#pulse{position:absolute;inset:0}#cross{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#fff}#message{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);font-size:21px;text-align:center;max-width:85%;opacity:0}#start{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:#03050aee}#panel{max-width:600px;margin:18px;padding:28px;text-align:center;background:#0b1119;border:1px solid #697887}h1{letter-spacing:6px}p{font:15px/1.6 Arial;color:#c5ced7}button{padding:12px 20px;background:#1d2a36;color:white;border:1px solid #aab8c5;cursor:pointer;letter-spacing:2px}#case{display:none;position:fixed;z-index:6;inset:8%;overflow:auto;padding:22px;background:#080c12f5;border:1px solid #8899aa;font:14px/1.6 Arial;pointer-events:auto}#case h2{font-family:Georgia}
 </style></head><body>
-<div id="hud"><div id="name">THE LAST DOOR</div><div id="task">OBJECTIVE: Find the four family memories.</div><div id="cross"></div><div id="pulse"></div><div id="message"></div><div id="hint">WASD move · Mouse look · E inspect/hide · F flashlight · J case file · ESC release mouse</div></div>
-<div id="case"><h2>THE FAMILY CASE FILE</h2><div id="caseText">Four family memories are missing. Find them to unlock the final portrait.</div><button id="close">CLOSE (J)</button></div>
-<div id="start"><div id="panel"><h1>THE LAST DOOR</h1><p>A first-person mystery horror prototype. Explore the abandoned west wing, find the family memories, and uncover why five figures wait behind the last door.</p><p>Suspense and supernatural encounters; no graphic content.</p><button id="enter">ENTER THE WEST WING</button></div></div>
+<div id="hud"><div id="name">THE LAST DOOR</div><div id="task">OBJECTIVE: Explore the mansion and find the family memories.</div><div id="room">GROUND FLOOR</div><div id="cross"></div><div id="pulse"></div><div id="message"></div><div id="hint">WASD move · Mouse look · E interact / stairs · F flashlight · J case file · ESC release mouse</div></div>
+<div id="case"><h2>THE FAMILY CASE FILE</h2><div id="caseText"></div><button id="close">CLOSE (J)</button></div>
+<div id="start"><div id="panel"><h1>THE LAST DOOR</h1><p>Three floors. Twenty-five rooms. One family secret.</p><p>Explore the abandoned mansion, inspect clues, avoid the spirits and uncover the truth hidden on the top floor.</p><p>WASD to move · Mouse to look · E to interact · F flashlight · J case file</p><button id="enter">ENTER THE MANSION</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x05070b);scene.fog=new THREE.FogExp2(0x080b10,.045);
-const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,100);camera.position.set(0,1.65,7);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x05070b);scene.fog=new THREE.FogExp2(0x090c12,.009);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,160);camera.position.set(0,1.65,0);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));document.body.appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0x9aabc0,0x111018,.35));const moon=new THREE.DirectionalLight(0xa8c0d8,.5);moon.position.set(-4,8,3);scene.add(moon);
-const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.9});
-function block(x,y,z,a,b,c,m){const o=new THREE.Mesh(new THREE.BoxGeometry(a,b,c),m);o.position.set(x,y,z);scene.add(o);return o}
-block(0,-.15,0,12,.3,36,material(0x24262a));block(0,3.1,0,12,.2,36,material(0x15171d));block(-6,1.5,0,.2,3,36,material(0x34343a));block(6,1.5,0,.2,3,36,material(0x34343a));
-for(const z of [-10,-2,6,14]){block(-3.2,1.5,z,.15,3,.15,material(0x15171d));block(3.2,1.5,z,.15,3,.15,material(0x15171d))}
-const door=block(0,1.4,-16.5,2.6,2.8,.2,material(0x30221b));
-// Wardrobes are the only places where the player can hide.
-const hideSpots=[];
-for(const [x,z] of [[-4.45,-10],[4.45,-3],[-4.45,5],[4.45,12]]){
-  block(x,1.15,z,.9,2.3,.85,material(0x30251f));
-  block(x,1.15,z-.44,.82,2.15,.06,material(0x49372c));
-  const knob=new THREE.Mesh(new THREE.SphereGeometry(.045,8,8),material(0xc0a36d));
-  knob.position.set(x+(x<0?.28:-.28),1.15,z-.49);scene.add(knob);
-  hideSpots.push(new THREE.Vector3(x,0,z));
+scene.add(new THREE.HemisphereLight(0x9aabc0,0x111018,.4));const moon=new THREE.DirectionalLight(0xa8c0d8,.55);moon.position.set(-18,25,12);scene.add(moon);
+const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.92});
+const wallMat=[mat(0x34343a),mat(0x292b34),mat(0x3a302d)],floorMat=[mat(0x292725),mat(0x28272d),mat(0x25242b)];
+function box(x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);scene.add(o);return o}
+const roomNames=[
+['Entrance Hall','Living Room','Dining Room','Kitchen','Library','Study','Guest Bedroom','Music Room','Staircase Hall'],
+['Parents’ Bedroom','Son’s Bedroom','Daughter’s Bedroom','Nursery','Family Lounge','Bathroom','Dressing Room','Art Room','Upper Stair Hall'],
+['Attic','Storage Room','Locked Archive','Old Servant Room','Hidden Passage','Secret Study','The Last Room']
+];
+const roomStories=[
+['The front door was locked from the inside.','A family photograph has been turned face down.','Five place settings remain on the table.','A kettle is still sitting on the cold stove.','The books are arranged around one missing volume.','A desk drawer has fresh scratches.','The guest bed has never been slept in.','A music box plays one unfinished tune.','The staircase connects all three floors.'],
+['The parents’ letters stop on the same date.','A wooden toy has been carefully repaired.','A drawing shows five people and a dark doorway.','The nursery mobile turns without a breeze.','The family gathered here every evening.','The mirror reflects an empty room.','A locket is hidden behind the wardrobe.','A painting has been covered with cloth.','The upper stairs are worn smooth.'],
+['The roof carries the sound of distant footsteps.','Old boxes are marked with family initials.','The archive door has a strange family symbol.','A servant’s journal mentions a hidden corridor.','A narrow passage runs behind the walls.','The final journal explains the night they vanished.','The family portrait waits behind the last door.']
+];
+const roomDefs=[];
+for(let f=0;f<3;f++)for(let i=0;i<roomNames[f].length;i++){
+ const row=Math.floor(i/3),col=i%3,x=(col-1)*12,z=(row-1)*12,y=f*5.2;
+ roomDefs.push({floor:f,index:i,x,z,y,name:roomNames[f][i],story:roomStories[f][i]});
 }
-for(const z of [-13,-6,1,10,14]){const l=new THREE.PointLight(0x9eb7d0,.8,7);l.position.set(-5.5,2.3,z);scene.add(l)}
-const lamp=new THREE.SpotLight(0xd9e8ff,3,22,Math.PI/7,.45);camera.add(lamp);camera.add(lamp.target);lamp.target.position.set(0,0,-1);scene.add(camera);
-function ghost(color,pos,speed){const g=new THREE.Group();const robe=new THREE.Mesh(new THREE.ConeGeometry(.55,1.6,16,1,true),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.58,side:THREE.DoubleSide}));robe.position.y=.7;g.add(robe);const head=new THREE.Mesh(new THREE.SphereGeometry(.36,16,12),new THREE.MeshBasicMaterial({color:0xe0e8ee,transparent:true,opacity:.8}));head.position.y=1.6;g.add(head);g.position.copy(pos);g.visible=false;scene.add(g);return {mesh:g,speed}}
-const spirits=[ghost(0xb8c7d4,new THREE.Vector3(2,0,-9),.45),ghost(0x9fb8c9,new THREE.Vector3(-3,0,-12),.7),ghost(0xc8c4dc,new THREE.Vector3(3.7,0,4),.4),ghost(0xb8b0a0,new THREE.Vector3(-3.8,0,10),.5),ghost(0xd9e7f5,new THREE.Vector3(0,0,-15),.65)];
+const roomAt=(f,x,z)=>roomDefs.find(r=>r.floor===f&&Math.abs(r.x-x)<5.9&&Math.abs(r.z-z)<5.9);
+const wallSegments=[];
+function addWall(x,y,z,w,h,d,level){box(x,y,z,w,h,d,wallMat[level]);wallSegments.push({x,z,w,d})}
+for(const r of roomDefs){
+ const {x,z,y,floor}=r;box(x,y-.18,z,11.8,.36,11.8,floorMat[floor]);box(x,y+4.1,z,11.8,.2,11.8,mat(0x171a20));
+ // Each shared wall has a centered doorway. Outer walls remain closed.
+ const dirs=[{dx:0,dz:-12,side:'n'},{dx:0,dz:12,side:'s'},{dx:-12,dz:0,side:'w'},{dx:12,dz:0,side:'e'}];
+ for(const a of dirs){
+  const neighbour=roomAt(floor,x+a.dx,z+a.dz),doorGap=!!neighbour;
+  if(a.side==='n'||a.side==='s'){
+   const zz=z+(a.side==='n'?-5.9:5.9);
+   if(doorGap){addWall(x-4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x+4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x,y+3.35,zz,2.2,.5,.25,floor)}
+   else addWall(x,y+1.8,zz,11.8,3.6,.25,floor);
+  }else{
+   const xx=x+(a.side==='w'?-5.9:5.9);
+   if(doorGap){addWall(xx,y+1.8,z-4.1,.25,3.6,3.6,floor);addWall(xx,y+1.8,z+4.1,.25,3.6,3.6,floor);addWall(xx,y+3.35,z, .25,.5,2.2,floor)}
+   else addWall(xx,y+1.8,z,.25,3.6,11.8,floor);
+  }
+ }
+ // Simple room dressing: furniture silhouettes and a warm lamp.
+ if(r.index%3===0)box(x-2,y+.65,z+1,2.3,1.3,1.1,mat(0x332b28));
+ else if(r.index%3===1)box(x+2,y+.5,z-1,2.2,1,1.4,mat(0x343039));
+ else box(x,y+.45,z+2,2.4,.9,1.3,mat(0x302b25));
+ const light=new THREE.PointLight(floor===2?0x9babc7:0xb6a17f,floor===2?.55:.75,12);light.position.set(x,y+3.2,z);scene.add(light);
+}
+const stairRooms=[[0,8],[1,8],[2,4]];
+const stairMarkers=stairRooms.map(([f,i])=>{const r=roomDefs.find(x=>x.floor===f&&x.index===i);const m=new THREE.Mesh(new THREE.TorusGeometry(1,.08,8,24),new THREE.MeshBasicMaterial({color:0x9d8660}));m.rotation.x=Math.PI/2;m.position.set(r.x,r.y+.08,r.z);scene.add(m);return r});
+const doorRoom=roomDefs.find(r=>r.floor===2&&r.index===6);
+const finalDoor=box(doorRoom.x,doorRoom.y+1.5,doorRoom.z-5.7,2.5,3,.25,mat(0x30221b));
 const labels=['Mother’s letter','Son’s wooden toy','Daughter’s drawing','Father’s pocket watch','Family portrait'];
-const stories=['She tried to keep everyone together. Her final letter asks the family not to separate.','He heard the bell and ran to warn everyone.','Her drawing shows five figures behind one locked door.','His watch stopped at the moment the family disappeared.','The five figures were one family, waiting to be remembered.'];
-const positions=[[4,0,-7],[-4,0,-1],[4,0,2],[-4,0,9],[0,0,-14]];
-const memories=positions.map((p,i)=>{const g=new THREE.Group();const o=new THREE.Mesh(new THREE.BoxGeometry(.45,.08,.35),new THREE.MeshStandardMaterial({color:0xd2c4a5,emissive:0x332211}));o.position.y=.6;g.add(o);const light=new THREE.PointLight(0xc5b58a,.3,2);light.position.y=1;g.add(light);g.position.set(...p);scene.add(g);return {mesh:g,found:false}});
-const keys={};let started=false,flashOn=true,foundClue=false,hiding=false,solved=0,yaw=0,pitch=0,beat=0;const clock=new THREE.Clock();const $=id=>document.getElementById(id);
-function say(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>$('message').style.opacity=0,3000)}
-function refresh(){ $('caseText').innerHTML=labels.map((x,i)=>'<p><b>'+(memories[i].found?'✓ ':'? ')+x+'</b><br>'+(memories[i].found?stories[i]:'Not discovered yet.')+'</p>').join('')+'<p>FAMILY MEMORIES: '+solved+'/5</p>'}
-$('enter').onclick=()=>{$('start').style.display='none';started=true;renderer.domElement.requestPointerLock?.();say('The air is colder in here...')};
+const clues=[
+{room:[0,5],pos:[-12,0,-12],story:'Mother’s letter: “Whatever happens, keep the children together.”'},
+{room:[1,1],pos:[0,5.2,-12],story:'The son’s toy carries a tiny engraving: “For my family.”'},
+{room:[1,2],pos:[12,5.2,-12],story:'The daughter’s drawing shows the same five people in every picture.'},
+{room:[2,3],pos:[-12,10.4,0],story:'The father’s watch stopped at the exact minute the family disappeared.'},
+{room:[2,6],pos:[12,10.4,0],story:'The portrait reveals the truth: all five spirits belonged to one family.'}
+];
+const clueObjects=clues.map((c,i)=>{const r=roomDefs.find(x=>x.floor===c.room[0]&&x.index===c.room[1]);const g=new THREE.Group();const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.38),new THREE.MeshStandardMaterial({color:0xd3bd8b,emissive:0x58401b}));orb.position.y=1;g.add(orb);const l=new THREE.PointLight(0xd8bd83,.8,4);l.position.y=1;g.add(l);g.position.set(r.x,r.y,r.z);scene.add(g);return {mesh:g,found:false,story:c.story}});
+function makeGhost(color,pos,speed){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.ConeGeometry(.55,1.7,16,1,true),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.56,side:THREE.DoubleSide}));body.position.y=.75;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshBasicMaterial({color:0xe4e9ed,transparent:true,opacity:.8}));head.position.y=1.65;g.add(head);g.position.copy(pos);g.visible=false;scene.add(g);return {mesh:g,speed,active:false,recovering:false}}
+const ghosts=[makeGhost(0xb8c7d4,new THREE.Vector3(-12,0,-12),.7),makeGhost(0x9fb8c9,new THREE.Vector3(0,5.2,-12),.85),makeGhost(0xc8c4dc,new THREE.Vector3(12,5.2,-12),.65),makeGhost(0xb8b0a0,new THREE.Vector3(-12,10.4,0),.9),makeGhost(0xd9e7f5,new THREE.Vector3(12,10.4,0),1.05)];
+const keys={};let started=false,flashOn=true,hiding=false,solved=0,yaw=0,pitch=0,beat=0,currentFloor=0,currentRoom=null;const clock=new THREE.Clock();const $=id=>document.getElementById(id);
+const lamp=new THREE.SpotLight(0xd9e8ff,3,24,Math.PI/7,.45);camera.add(lamp);camera.add(lamp.target);lamp.target.position.set(0,0,-1);scene.add(camera);
+function say(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>$('message').style.opacity=0,3400)}
+function refresh(){ $('caseText').innerHTML='<p><b>MEMORIES: '+solved+'/5</b></p>'+labels.map((x,i)=>'<p><b>'+(clueObjects[i].found?'✓ ':'? ')+x+'</b><br>'+(clueObjects[i].found?clueObjects[i].story:'Not discovered yet.')+'</p>').join('')+'<hr><p>FLOOR 1: 9 rooms · FLOOR 2: 9 rooms · FLOOR 3: 7 rooms</p>'}
+function changeFloor(f){currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
+$('enter').onclick=()=>{$('start').style.display='none';started=true;camera.position.set(-12,1.65,-12);renderer.domElement.requestPointerLock?.();say('The mansion door closes behind you.')};
 $('close').onclick=()=>{$('case').style.display='none';renderer.domElement.requestPointerLock?.()};
 addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});
-addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyF'){flashOn=!flashOn;lamp.intensity=flashOn?3:0}if(e.code==='KeyJ'&&started){$('case').style.display=$('case').style.display==='block'?'none':'block';refresh();if($('case').style.display==='block')document.exitPointerLock?.();else renderer.domElement.requestPointerLock?.()}if(e.code==='KeyE'&&started){
-if(hiding){hiding=false;say('You leave the wardrobe.');return}
-if(camera.position.distanceTo(door.position)<3){
- if(solved===5){door.visible=false;started=false;document.exitPointerLock?.();$('task').textContent='MYSTERY SOLVED';$('hint').textContent='THE LAST DOOR IS OPEN';say('The five memories reveal one family. At last, the west wing is quiet.')}
- else say('The door is sealed. Find all five family memories.');
- return;
-}
-let done=false;
-for(let i=0;i<memories.length;i++){
- if(!memories[i].found&&camera.position.distanceTo(memories[i].mesh.position)<2.2){
-  if(i===4&&solved<4){say('The family portrait is sealed. Find the four memories first.');done=true;break}
-  memories[i].found=true;memories[i].mesh.visible=false;solved++;
-  if(i<4)spirits[i].mesh.visible=true;else spirits[4].mesh.visible=true;
-  say(labels[i]+': '+stories[i]);$('task').textContent='OBJECTIVE: Family memories '+solved+'/5';refresh();done=true;
-  if(solved===5){$('task').textContent='OBJECTIVE: Return to the last door';say('The family portrait reveals the truth. Return to the last door.')}
-  break;
+addEventListener('keydown',e=>{
+ keys[e.code]=true;
+ if(e.code==='KeyF'){flashOn=!flashOn;lamp.intensity=flashOn?3:0}
+ if(e.code==='KeyJ'&&started){$('case').style.display=$('case').style.display==='block'?'none':'block';refresh();if($('case').style.display==='block')document.exitPointerLock?.();else renderer.domElement.requestPointerLock?.()}
+ if(e.code==='KeyE'&&started&&$('case').style.display!=='block'){
+  if(hiding){hiding=false;say('You step out from behind the furniture.');return}
+  const stair=stairMarkers.findIndex(r=>r.floor===currentFloor&&Math.hypot(camera.position.x-r.x,camera.position.z-r.z)<3);
+  if(stair>=0){if(currentFloor===0)changeFloor(1);else if(currentFloor===1)changeFloor(2);else changeFloor(1);return}
+  const near=clueObjects.findIndex(c=>!c.found&&camera.position.distanceTo(c.mesh.position)<2.5);
+  if(near>=0){if(near===4&&solved<4){say('The portrait is sealed. Find the four family memories first.');return}clueObjects[near].found=true;clueObjects[near].mesh.visible=false;solved++;if(near<4){ghosts[near].active=true;ghosts[near].mesh.visible=true}else ghosts[4].active=true;refresh();say(clueObjects[near].story);$('task').textContent=solved===5?'OBJECTIVE: Return to the final room':'OBJECTIVE: Family memories '+solved+'/5';return}
+  if(currentRoom&&currentRoom.name==='The Last Room'&&solved===5){finalDoor.visible=false;started=false;document.exitPointerLock?.();$('task').textContent='MYSTERY SOLVED';$('hint').textContent='THE LAST DOOR IS OPEN';say('The family is finally remembered. The mansion falls silent.');return}
+  say('Nothing nearby to inspect. Explore the rooms and look for glowing memories.');
  }
-}
-if(!done){
- const nearby=hideSpots.some(p=>camera.position.distanceTo(p)<2.1);
- if(nearby){hiding=true;say('You slip into the wardrobe. Stay quiet...')}
- else say('Nothing to inspect here. Find a wardrobe or a family memory.');
-}}});
+});
 addEventListener('keyup',e=>keys[e.code]=false);
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(started&&$('case').style.display!=='block'){camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),v=new THREE.Vector3();if(!hiding){if(keys.KeyW)v.add(f);if(keys.KeyS)v.sub(f);if(keys.KeyD)v.add(r);if(keys.KeyA)v.sub(r);if(v.lengthSq())camera.position.add(v.normalize().multiplyScalar(3*dt));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-5.3,5.3);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-16,16)}let nearest=99;spirits.forEach((s,i)=>{if(!s.mesh.visible)return;const d=new THREE.Vector3(camera.position.x-s.mesh.position.x,0,camera.position.z-s.mesh.position.z);const dist=d.length();nearest=Math.min(nearest,dist);if(!hiding&&dist>1.8)s.mesh.position.add(d.normalize().multiplyScalar(dt*s.speed));if(!hiding&&dist<1.15&&!s.recovering){s.recovering=true;s.mesh.visible=false;camera.position.set(0,1.65,7);yaw=0;pitch=0;say('A cold whisper surrounds you. You find yourself back at the entrance.');setTimeout(()=>{s.mesh.position.set((i%2?-1:1)*(2+i*.25),0,-8-i);s.mesh.visible=true;s.recovering=false},4500)}s.mesh.lookAt(camera.position.x,1,camera.position.z);s.mesh.position.y=Math.sin(performance.now()*.002+i)*.1});if(nearest<8){beat-=dt;if(beat<=0){say('...');beat=THREE.MathUtils.mapLinear(Math.min(nearest,8),8,1,.9,.35)}$('pulse').style.boxShadow='inset 0 0 '+Math.round((8-nearest)*7)+'px rgba(150,0,20,.35)'}else $('pulse').style.boxShadow='none';if(camera.position.distanceTo(door.position)<3){say(solved===5?'THE LAST DOOR OPENS. MYSTERY SOLVED.':'The door is sealed. Find all five family memories.')}}renderer.render(scene,camera)}
+function animate(){
+ requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
+ if(started&&$('case').style.display!=='block'){
+  camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+  const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),v=new THREE.Vector3();
+  if(!hiding){if(keys.KeyW)v.add(f);if(keys.KeyS)v.sub(f);if(keys.KeyD)v.add(r);if(keys.KeyA)v.sub(r);if(v.lengthSq()){const n=v.normalize().multiplyScalar(3.4*dt);camera.position.add(n)}
+   camera.position.x=THREE.MathUtils.clamp(camera.position.x,-17.6,17.6);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-17.6,17.6);
+  }
+  const room=roomAt(currentFloor,camera.position.x,camera.position.z);
+  if(room&&room!==currentRoom){currentRoom=room;$('room').textContent='FLOOR '+(currentFloor+1)+' · '+room.name;if(room.index%3===1)say(room.story)}
+  // Ghosts pursue the player on their own floor; hiding pauses pursuit.
+  let nearest=99;
+  ghosts.forEach((g,i)=>{if(!g.active||!g.mesh.visible)return;const p=new THREE.Vector3(camera.position.x-g.mesh.position.x,0,camera.position.z-g.mesh.position.z);const d=p.length();nearest=Math.min(nearest,d);if(!hiding&&currentFloor===Math.floor(g.mesh.position.y/5.2)&&d>1.5)g.mesh.position.add(p.normalize().multiplyScalar(g.speed*dt));g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);if(!hiding&&currentFloor===Math.floor(g.mesh.position.y/5.2)&&d<1.2&&!g.recovering){g.recovering=true;g.mesh.visible=false;camera.position.set(-12,currentFloor*5.2+1.65,-12);say('A sudden chill. You are back near the staircase.');setTimeout(()=>{g.mesh.visible=true;g.recovering=false},4000)}});
+  if(nearest<8){beat-=dt;if(beat<=0){say('You hear a distant whisper...');beat=THREE.MathUtils.mapLinear(Math.min(nearest,8),8,1,1.1,.4)}$('pulse').style.boxShadow='inset 0 0 '+Math.round((8-nearest)*6)+'px rgba(130,0,20,.3)'}else $('pulse').style.boxShadow='none';
+ }
+ renderer.render(scene,camera);
+}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script><script>if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script></body></html>
