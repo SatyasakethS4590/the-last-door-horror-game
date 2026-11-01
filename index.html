@@ -125,11 +125,13 @@ function heartbeat(){if(!audioCtx)return;const now=audioCtx.currentTime,osc=audi
 const lamp=new THREE.SpotLight(0xd9e8ff,3,24,Math.PI/7,.45);camera.add(lamp);camera.add(lamp.target);lamp.target.position.set(0,0,-1);scene.add(camera);
 function say(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>$('message').style.opacity=0,3400)}
 function refresh(){ $('caseText').innerHTML='<p><b>MEMORIES: '+solved+'/5</b></p>'+labels.map((x,i)=>'<p><b>'+(clueObjects[i].found?'✓ ':'? ')+x+'</b><br>'+(clueObjects[i].found?clueObjects[i].story:'Not discovered yet.')+'</p>').join('')+'<hr><p>FLOOR 1: 9 rooms · FLOOR 2: 9 rooms · FLOOR 3: 7 rooms</p>'}
-let previousFloor=0;\nfunction changeFloor(f){previousFloor=currentFloor;currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
+let previousFloor=0;
+function changeFloor(f){previousFloor=currentFloor;currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
 loadProgress();
 $('enter').onclick=()=>{$('start').style.display='none';started=true;camera.position.set(-12,1.65,-12);startAudio();renderer.domElement.requestPointerLock?.();say('The mansion door closes behind you.')};
 $('close').onclick=()=>{$('case').style.display='none';renderer.domElement.requestPointerLock?.()};
-addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});\nrenderer.domElement.addEventListener('click',()=>{if(started&&$('case').style.display!=='block'&&matchMedia('(pointer:fine)').matches&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.()});
+addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});
+renderer.domElement.addEventListener('click',()=>{if(started&&$('case').style.display!=='block'&&matchMedia('(pointer:fine)').matches&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.()});
 addEventListener('keydown',e=>{
  keys[e.code]=true;
  if(e.code==='KeyF'){flashOn=!flashOn;lamp.intensity=flashOn?3:0}
