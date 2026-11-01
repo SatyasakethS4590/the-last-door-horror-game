@@ -12,11 +12,12 @@ Serve this folder from a local web server (for example, `python -m http.server 8
 - **1, 2, 3** — enter the study puzzle sequence
 - **F** — flashlight
 - **J** — family case file
-- **Esc** — release mouse
+- **Esc** — release mouse (click the game to resume)
+- **Touch devices** — use the on-screen direction/action buttons; drag the scene to look around
 
 ## Archive puzzle
 Read the inscription in the library. It hints at the sequence **2, 1, 3**. Enter that sequence while near the study lock, collect the key from the study, then use it at the locked archive door on the top floor.
 
-Progress for collected memories, puzzle completion, and the archive key is saved in this browser.
+Progress for collected memories, puzzle completion, archive key, and archive door unlock is saved in this browser. Ambient sound and heartbeat effects start after entering the mansion.
 
 This is an early playable prototype, not the complete planned 7–9 hour game. Full browser playtesting and further level design are still needed.
