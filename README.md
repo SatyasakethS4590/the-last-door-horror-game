@@ -1,6 +1,6 @@
 # THE LAST DOOR
 
-A first-person mystery-horror browser prototype with five family memories, ghost encounters, flashlight, hiding, and a case file.
+A first-person mystery-horror browser prototype with a three-floor, 25-room mansion, five family memories, distinct ghost behaviours, flashlight, wardrobe hiding, a case file, and an archive puzzle.
 
 ## Run locally
 Serve this folder from a local web server (for example, `python -m http.server 8000`) and open `http://localhost:8000`. The Three.js module is loaded from a CDN, so an internet connection is needed on first load.
@@ -8,9 +8,15 @@ Serve this folder from a local web server (for example, `python -m http.server 8
 ## Controls
 - **WASD** — move
 - **Mouse** — look around
-- **E** — inspect a memory / hide / leave hiding
+- **E** — interact with memories, wardrobes, stairs, key, and archive door
+- **1, 2, 3** — enter the study puzzle sequence
 - **F** — flashlight
 - **J** — family case file
 - **Esc** — release mouse
 
-This is an early playable prototype, not the complete planned 7–9 hour game.
+## Archive puzzle
+Read the inscription in the library. It hints at the sequence **2, 1, 3**. Enter that sequence while near the study lock, collect the key from the study, then use it at the locked archive door on the top floor.
+
+Progress for collected memories, puzzle completion, and the archive key is saved in this browser.
+
+This is an early playable prototype, not the complete planned 7–9 hour game. Full browser playtesting and further level design are still needed.
