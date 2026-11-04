@@ -229,6 +229,7 @@ addEventListener('keydown',e=>{
    if(!hasArchiveKey){say('The archive is locked. Find the key hidden in the study.');return}
    archiveDoor.visible=false;archiveUnlocked=true;playDoorCreak();const idx=wallSegments.indexOf(archiveDoorCollision);if(idx>=0)wallSegments.splice(idx,1);saveProgress();say('The archive door unlocks with a quiet click.');return
   }
+  const nearbyRecord=loreObjects.find(n=>!n.found&&n.mesh.visible&&camera.position.distanceTo(n.mesh.position)<1.8);if(nearbyRecord){nearbyRecord.found=true;nearbyRecord.mesh.visible=false;saveProgress();refresh();say('House record found: '+nearbyRecord.room+'. Open the case file to read it.');return}
   const near=clueObjects.findIndex(c=>!c.found&&camera.position.distanceTo(c.mesh.position)<2.5);
   if(near>=0){if(near===4&&solved<4){say('The portrait is sealed. Find the four family memories first.');return}clueObjects[near].found=true;clueObjects[near].mesh.visible=false;solved++;saveProgress();if(near<4){ghosts[near].active=true;ghosts[near].mesh.visible=true}else{ghosts[4].active=true;ghosts[4].mesh.visible=true;}refresh();say(clueObjects[near].story);$('task').textContent=solved===5?'OBJECTIVE: Return to the final room':'OBJECTIVE: Family memories '+solved+'/5';return}
   if(currentRoom&&currentRoom.name==='The Last Room'&&solved===5){finalDoor.visible=false;started=false;document.exitPointerLock?.();$('task').textContent='MYSTERY SOLVED';$('hint').textContent='THE LAST DOOR IS OPEN';say('The family is finally remembered. The mansion falls silent.');return}
