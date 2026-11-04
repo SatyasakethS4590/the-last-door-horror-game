@@ -172,7 +172,7 @@ function makeGhost(color,pos,speed,kind){
   for(let i=0;i<3;i++){const rune=new THREE.Mesh(new THREE.OctahedronGeometry(.12),glowMat);const a=i*Math.PI*2/3;rune.position.set(Math.cos(a)*.8,1.1,Math.sin(a)*.8);g.add(rune)}
  }
  g.position.copy(pos);g.visible=false;scene.add(g);
- return {mesh:g,speed,kind,active:false,recovering:false,phase:Math.random()*4,home:pos.clone(),vanishClock:5,ambushClock:10,investigateClock:0,searching:false,searchTime:0,searchCooldown:0}
+ return {mesh:g,speed,kind,active:false,recovering:false,phase:Math.random()*4,home:pos.clone(),patrolIndex:0,patrolWait:0,alerted:false,patrol:[new THREE.Vector3(pos.x+2,pos.y,pos.z),new THREE.Vector3(pos.x,pos.y,pos.z+2),new THREE.Vector3(pos.x-2,pos.y,pos.z),new THREE.Vector3(pos.x,pos.y,pos.z-2)],vanishClock:5,ambushClock:10,investigateClock:0,searching:false,searchTime:0,searchCooldown:0}
 }
 const sideStories=[
  {name:'The Mother',records:[9,12,13],story:'The mother kept writing lullabies because she feared the children would forget her voice. Her final note says she wanted them to stay together.'},
@@ -286,7 +286,16 @@ function animate(){
    if(g.kind==='vanisher')chase=chase&&g.mesh.visible&&d<9;
    if(g.kind==='ambusher')chase=chase&&d<12;
    if(g.kind==='keeper'){chase=!hiding;speed*=1.25;if(d>8&&g.ambushClock<0){g.mesh.position.set(camera.position.x+5,g.home.y,camera.position.z+4);g.ambushClock=10}}
+   const alertRange=g.kind==='keeper'?15:(g.kind==='stalker'?11:9);
+   if(!hiding&&d<alertRange&&!g.alerted){g.alerted=true;say(g.kind==='investigator'?'A spirit has noticed your movement.':g.kind==='keeper'?'The family guardian is approaching.':'Something is moving in this room.');}
+   if(d>alertRange+4)g.alerted=false;
    if(chase&&d>1.45&&g.mesh.visible){const step=p.normalize().multiplyScalar(speed*dt);g.mesh.position.x+=step.x;g.mesh.position.z+=step.z}
+   else if(!hiding&&!g.searching&&g.mesh.visible&&g.kind!=='keeper'){
+    g.patrolWait=Math.max(0,g.patrolWait-dt);
+    const target=g.patrol[g.patrolIndex],dx=target.x-g.mesh.position.x,dz=target.z-g.mesh.position.z,dist=Math.hypot(dx,dz);
+    if(dist<.22){g.patrolIndex=(g.patrolIndex+1)%g.patrol.length;g.patrolWait=.45;}
+    else if(g.patrolWait<=0){g.mesh.position.x+=dx/dist*g.speed*.38*dt;g.mesh.position.z+=dz/dist*g.speed*.38*dt;}
+   }
    g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);
    if(!hiding&&d<1.2){g.recovering=true;g.mesh.visible=false;camera.position.set(-12,currentFloor*5.2+1.65,-12);say('The spirit rushes past. You awaken near the staircase.');g.mesh.position.copy(g.home);g.investigateClock=0;g.vanishClock=5;g.ambushClock=12;setTimeout(()=>{g.mesh.visible=true;g.recovering=false},3500)}
   });
