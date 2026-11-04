@@ -287,9 +287,27 @@ addEventListener('keyup',e=>keys[e.code]=false);
 document.querySelectorAll('#touch [data-key]').forEach(b=>{const code=b.dataset.key; b.addEventListener('pointerdown',e=>{e.preventDefault();keys[code]=true;b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(type=>b.addEventListener(type,()=>keys[code]=false))});
 document.querySelectorAll('#touch [data-tap]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();const code=b.dataset.tap;document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true}))}));
 let lookTouch=null;renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&started){lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId)}});renderer.domElement.addEventListener('pointermove',e=>{if(lookTouch&&e.pointerId===lookTouch.id){const dx=e.clientX-lookTouch.x,dy=e.clientY-lookTouch.y;yaw-=dx*.006;pitch=Math.max(-1.1,Math.min(1.1,pitch-dy*.006));lookTouch.x=e.clientX;lookTouch.y=e.clientY}});['pointerup','pointercancel','lostpointercapture'].forEach(type=>renderer.domElement.addEventListener(type,e=>{if(lookTouch&&e.pointerId===lookTouch.id)lookTouch=null}));
+function updateInteractionHint(){
+ if(!started||paused||$('case').style.display==='block')return;
+ let prompt='';
+ if(hiding)prompt='E · Leave hiding place';
+ else if(hideSpots.some(h=>h.floor===currentFloor&&Math.hypot(camera.position.x-h.x,camera.position.z-h.z)<2.2))prompt='E · Hide in wardrobe';
+ else if(stairMarkers.some(r=>r.floor===currentFloor&&Math.hypot(camera.position.x-r.x,camera.position.z-r.z)<3))prompt='E · Use staircase';
+ else if(currentFloor===0&&nearPosition(libraryRoom.x,libraryRoom.z,2.6))prompt='E · Read library inscription';
+ else if(currentFloor===0&&puzzleSolved&&!hasArchiveKey&&keyMesh.visible&&camera.position.distanceTo(keyMesh.position)<2.5)prompt='E · Collect archive key';
+ else if(currentFloor===0&&nearPosition(studyRoom.x,studyRoom.z,3)&&!puzzleSolved)prompt='1 · 2 · 3 · Enter library code (2, 1, 3)';
+ else if(currentFloor===2&&nearPosition(archiveRoom.x,archiveRoom.z+5.7,3))prompt=hasArchiveKey?'E · Unlock archive':'E · Inspect archive lock';
+ else if(ghosts.slice(0,4).some((g,i)=>g.active&&!sideResolved[i]&&g.mesh.position.distanceTo(camera.position)<2.7))prompt='E · Speak to the spirit';
+ else if(loreObjects.some(n=>!n.found&&n.mesh.visible&&camera.position.distanceTo(n.mesh.position)<1.8))prompt='E · Inspect house record';
+ else if(clueObjects.some((cl,i)=>!cl.found&&camera.position.distanceTo(cl.mesh.position)<2.5&&(i!==4||(solved>=4&&sideResolved.every(Boolean)))))prompt='E · Examine family memory';
+ else if(currentRoom&&currentRoom.name==='The Last Room'&&solved===5&&sideResolved.every(Boolean))prompt='E · Open The Last Door';
+ else prompt='WASD move · Shift sprint · E interact · F flashlight · J case file';
+ const hint=$('hint');if(hint.textContent!==prompt)hint.textContent=prompt;
+}
 function animate(){
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);noiseClock=Math.max(0,noiseClock-dt);if(started&&!paused&&$('case').style.display!=='block'){eventClock+=dt;if(eventClock>=eventNext){eventClock=0;eventNext=34+Math.random()*24;triggerMansionEvent();}}if(eventFlicker>0){eventFlicker-=dt;eventFlickerClock-=dt;if(eventFlickerClock<=0){eventFlickerClock=.075;eventFlickerOn=!eventFlickerOn;lamp.intensity=flashOn&&eventFlickerOn?3:0;}if(eventFlicker<=0)lamp.intensity=flashOn?3:0;}const rainAttr=rainGeometry.attributes.position;for(let i=0;i<rainCount;i++){const j=i*3;rainAttr.array[j+1]-=rainSpeeds[i]*dt;if(rainAttr.array[j+1]<0)rainAttr.array[j+1]=17;}rainAttr.needsUpdate=true;stormClock+=dt;if(stormClock>8+Math.random()*5){stormClock=0;stormLight.intensity=2.8;}else stormLight.intensity=Math.max(0,stormLight.intensity-dt*2.4);if(started&&!paused){autosaveClock+=dt;if(autosaveClock>=8){saveProgress();autosaveClock=0}}
  if(started&&!paused&&$('case').style.display!=='block'){
+  updateInteractionHint();
   camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
   const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),v=new THREE.Vector3();
   if(!hiding){if(keys.KeyW)v.add(f);if(keys.KeyS)v.sub(f);if(keys.KeyD)v.add(r);if(keys.KeyA)v.sub(r);if(v.lengthSq()){const running=!!(keys.ShiftLeft||keys.ShiftRight),moveSpeed=running?5.1:3.4;const n=v.normalize().multiplyScalar(moveSpeed*dt);movePlayer(n.x,n.z);if(audioCtx&&audioCtx.state==='running'&&performance.now()-lastFootstep>(running?300:430)){playFootstep(currentFloor);lastFootstep=performance.now();noiseClock=running?2.1:1.15;noiseX=camera.position.x;noiseZ=camera.position.z;if(running)noiseSound(.16,125,.025)}}
