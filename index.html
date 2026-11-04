@@ -44,11 +44,11 @@ for(const r of roomDefs){
   const neighbour=roomAt(floor,x+a.dx,z+a.dz),doorGap=!!neighbour;
   if(a.side==='n'||a.side==='s'){
    const zz=z+(a.side==='n'?-5.9:5.9);
-   if(doorGap){addWall(x-4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x+4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x,y+3.35,zz,2.2,.5,.25,floor)}
+   if(doorGap){addWall(x-4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x+4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x,y+3.35,zz,2.2,.5,.25,floor);if(a.side==='s'){const trim=mat(0x72583b);box(x-1.12,y+1.8,zz,.16,3.6,.32,trim);box(x+1.12,y+1.8,zz,.16,3.6,.32,trim);box(x,y+3.58,zz,2.4,.16,.32,trim);const panel=box(x-0.98,y+1.65,zz,1.95,3.25,.13,mat(0x30231d));panel.rotation.y=-.72;box(x-1.83,y+1.65,zz-.62,.09,.09,.09,mat(0xb58a4e));}}
    else addWall(x,y+1.8,zz,11.8,3.6,.25,floor);
   }else{
    const xx=x+(a.side==='w'?-5.9:5.9);
-   if(doorGap){addWall(xx,y+1.8,z-4.1,.25,3.6,3.6,floor);addWall(xx,y+1.8,z+4.1,.25,3.6,3.6,floor);addWall(xx,y+3.35,z, .25,.5,2.2,floor)}
+   if(doorGap){addWall(xx,y+1.8,z-4.1,.25,3.6,3.6,floor);addWall(xx,y+1.8,z+4.1,.25,3.6,3.6,floor);addWall(xx,y+3.35,z, .25,.5,2.2,floor);if(a.side==='e'){const trim=mat(0x72583b);box(xx,y+1.8,z-1.12,.32,3.6,.16,trim);box(xx,y+1.8,z+1.12,.32,3.6,.16,trim);box(xx,y+3.58,z,.32,.16,2.4,trim);const panel=box(xx,y+1.65,z-.98, .13,3.25,1.95,mat(0x30231d));panel.rotation.y=.72;box(xx-.62,y+1.65,z-1.83,.09,.09,.09,mat(0xb58a4e));}}
    else addWall(xx,y+1.8,z,.25,3.6,11.8,floor);
   }
  }
@@ -133,7 +133,7 @@ const keyRing=new THREE.Mesh(new THREE.TorusGeometry(.18,.045,8,16),new THREE.Me
 keyRing.position.y=.8;keyMesh.add(keyRing);
 const keyStem=box(0,0,0,.08,.55,.08,mat(0xd1a94f));keyStem.position.y=.48;keyMesh.add(keyStem);
 keyMesh.position.set(studyRoom.x+2,studyRoom.y,studyRoom.z);keyMesh.visible=false;scene.add(keyMesh);
-const archiveDoor=box(archiveRoom.x,archiveRoom.y+1.55,archiveRoom.z+5.72,2.8,3.1,.22,mat(0x33251b));
+const archiveFrame=mat(0x9a7540);box(archiveRoom.x-1.55,archiveRoom.y+1.65,archiveRoom.z+5.69,.22,3.3,.3,archiveFrame);box(archiveRoom.x+1.55,archiveRoom.y+1.65,archiveRoom.z+5.69,.22,3.3,.3,archiveFrame);box(archiveRoom.x,archiveRoom.y+3.28,archiveRoom.z+5.69,3.3,.22,.3,archiveFrame);const archiveDoor=box(archiveRoom.x,archiveRoom.y+1.55,archiveRoom.z+5.72,2.8,3.1,.22,mat(0x33251b));box(archiveRoom.x,archiveRoom.y+1.7,archiveRoom.z+5.57,.9,1.25,.06,mat(0x61472f));box(archiveRoom.x+.92,archiveRoom.y+1.5,archiveRoom.z+5.55,.12,.12,.12,mat(0xd1a94f));
 const archiveDoorCollision={x:archiveRoom.x,z:archiveRoom.z+5.72,w:2.8,d:.22,floor:2};wallSegments.push(archiveDoorCollision);
 function nearPosition(x,z,range=2.5){return Math.hypot(camera.position.x-x,camera.position.z-z)<range}
 const loreEntries=[
