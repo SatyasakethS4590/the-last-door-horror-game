@@ -315,15 +315,15 @@ function animate(){
    }
    if(g.kind==='ambusher'){g.ambushClock-=dt;if(g.ambushClock<=0&&!hiding){const behindX=Math.sin(yaw),behindZ=Math.cos(yaw);g.mesh.position.set(camera.position.x+behindX*5,g.home.y,camera.position.z+behindZ*5);g.mesh.visible=true;g.mesh.scale.setScalar(.08);g.revealTime=.9;g.ambushClock=15;say('A presence appears somewhere behind you.');}}
    let chase=!hiding,speed=g.speed;if(visibleToGhost)chase=true;
-   if(g.kind==='stalker'){chase=chase&&d<14;if(flashOn&&d<7)speed*=.35}
-   if(g.kind==='investigator'){g.investigateClock+=dt;const heardNoise=noiseClock>0&&Math.hypot(g.mesh.position.x-noiseX,g.mesh.position.z-noiseZ)<14;if(heardNoise&&!hiding&&!g.noiseAlerted){g.noiseAlerted=true;say('The spirit heard your footsteps. It is searching this area.');}if(!heardNoise)g.noiseAlerted=false;chase=chase&&(d<10&&g.investigateClock>1.8||heardNoise);if(heardNoise)speed*=1.18;if(d>10&&!heardNoise){g.mesh.position.x=g.home.x+Math.sin(g.phase*.35)*2;g.mesh.position.z=g.home.z+Math.cos(g.phase*.35)*2}}
+   if(g.kind==='stalker'){chase=chase&&d<14;if(flashOn&&d<7){chase=false;speed*=.12;if(!g.lightWarning){g.lightWarning=true;say('The Stalker recoils from your light. Keep it between you.');}}else g.lightWarning=false;}
+   if(g.kind==='investigator'){g.investigateClock+=dt;const heardNoise=noiseClock>0&&Math.hypot(g.mesh.position.x-noiseX,g.mesh.position.z-noiseZ)<14;if(heardNoise&&!hiding&&!g.noiseAlerted){g.noiseAlerted=true;g.investigateX=noiseX;g.investigateZ=noiseZ;say('The spirit heard your footsteps. It is searching the place where you made the sound.');}if(!heardNoise)g.noiseAlerted=false;chase=chase&&(d<10&&g.investigateClock>1.8||heardNoise);if(heardNoise)speed*=1.18;if(d>10&&!heardNoise){g.mesh.position.x=g.home.x+Math.sin(g.phase*.35)*2;g.mesh.position.z=g.home.z+Math.cos(g.phase*.35)*2}}
    if(g.kind==='vanisher')chase=chase&&g.mesh.visible&&d<9;
    if(g.kind==='ambusher')chase=chase&&d<12;
    if(g.kind==='keeper'){chase=!hiding;speed*=1.25;if(d>8&&g.ambushClock<0){g.mesh.position.set(camera.position.x+5,g.home.y,camera.position.z+4);g.ambushClock=10}}
    const alertRange=g.kind==='keeper'?15:(g.kind==='stalker'?11:9);
    if(!hiding&&d<alertRange&&!g.alerted){g.alerted=true;say(g.kind==='investigator'?'A spirit has noticed your movement.':g.kind==='keeper'?'The family guardian is approaching.':'Something is moving in this room.');}
    if(d>alertRange+4)g.alerted=false;
-   if(chase&&d>1.45&&g.mesh.visible){const step=p.normalize().multiplyScalar(speed*dt);g.mesh.position.x+=step.x;g.mesh.position.z+=step.z}
+   if(chase&&d>1.45&&g.mesh.visible){const targetX=g.kind==='investigator'&&g.noiseAlerted?g.investigateX:camera.position.x,targetZ=g.kind==='investigator'&&g.noiseAlerted?g.investigateZ:camera.position.z,dx=targetX-g.mesh.position.x,dz=targetZ-g.mesh.position.z,dist=Math.hypot(dx,dz)||1;if(g.kind!=='investigator'||!g.noiseAlerted||dist>.65){g.mesh.position.x+=dx/dist*speed*dt;g.mesh.position.z+=dz/dist*speed*dt;}else{g.noiseAlerted=false;g.investigateClock=0;}}
    else if(!hiding&&!g.searching&&g.mesh.visible&&g.kind!=='keeper'){
     g.patrolWait=Math.max(0,g.patrolWait-dt);
     const target=g.patrol[g.patrolIndex],dx=target.x-g.mesh.position.x,dz=target.z-g.mesh.position.z,dist=Math.hypot(dx,dz);
