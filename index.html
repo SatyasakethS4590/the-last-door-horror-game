@@ -7,7 +7,7 @@
 <div id="hud"><div id="name">THE LAST DOOR</div><div id="task">OBJECTIVE: Explore the mansion and find the family memories.</div><div id="room">GROUND FLOOR</div><div id="cross"></div><div id="pulse"></div><div id="message"></div><div id="hint">WASD move · Mouse look · E interact · 1/2/3 puzzle · F flashlight · J case file</div></div>
 <div id="touch"><div class="pad"><span></span><button data-key="KeyW">▲</button><span></span><button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button></div><div class="actions"><button data-tap="KeyE">INTERACT</button><button data-tap="KeyF">LIGHT</button><button data-tap="KeyJ">CASE</button><button data-tap="Digit1">1</button><button data-tap="Digit2">2</button><button data-tap="Digit3">3</button></div></div>
 <div id="case"><h2>THE FAMILY CASE FILE</h2><div id="caseText"></div><button id="close">CLOSE (J)</button></div>
-<div id="start"><div id="panel"><h1>THE LAST DOOR</h1><p>Three floors. Twenty-five rooms. One family secret.</p><p>Explore the abandoned mansion, inspect clues, avoid the spirits and uncover the truth hidden on the top floor.</p><p>WASD to move · Mouse to look · E interact · 1/2/3 solve puzzle · F flashlight · J case file</p><button id="enter">ENTER THE MANSION</button></div></div>
+<div id="start"><div id="panel"><h1>THE LAST DOOR</h1><p>Three floors. Twenty-five rooms. One family secret.</p><p>Explore the abandoned mansion, inspect clues, avoid the spirits and uncover the truth hidden on the top floor.</p><p>WASD to move · Mouse to look · E interact · 1/2/3 solve puzzle · F flashlight · J case file</p><button id="enter">ENTER THE MANSION</button> <button id="resetProgress" type="button">RESET STORY</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x05070b);scene.fog=new THREE.FogExp2(0x090c12,.009);
@@ -129,6 +129,7 @@ let previousFloor=0;
 function changeFloor(f){previousFloor=currentFloor;currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
 loadProgress();
 $('enter').onclick=()=>{$('start').style.display='none';started=true;camera.position.set(-12,1.65,-12);startAudio();renderer.domElement.requestPointerLock?.();say('The mansion door closes behind you.')};
+$('resetProgress').onclick=()=>{if(confirm('Reset all THE LAST DOOR story progress? Your collected clues and archive unlock will be cleared.')){try{localStorage.removeItem('theLastDoorProgress')}catch(e){}location.reload()}};
 $('close').onclick=()=>{$('case').style.display='none';renderer.domElement.requestPointerLock?.()};
 addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});
 renderer.domElement.addEventListener('click',()=>{if(started&&$('case').style.display!=='block'&&matchMedia('(pointer:fine)').matches&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.()});
