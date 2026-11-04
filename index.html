@@ -212,6 +212,8 @@ const sideStories=[
 ];
 const sideResolved=[false,false,false,false];
 const ghosts=[makeGhost(0xb8c7d4,new THREE.Vector3(-12,0,-12),.7,'stalker'),makeGhost(0x9fb8c9,new THREE.Vector3(0,5.2,-12),.85,'investigator'),makeGhost(0xc8c4dc,new THREE.Vector3(12,5.2,-12),.65,'vanisher'),makeGhost(0xb8b0a0,new THREE.Vector3(-12,10.4,0),.9,'ambusher'),makeGhost(0xd9e7f5,new THREE.Vector3(12,10.4,0),1.05,'keeper')];
+const ghostPatrolRoutes=[[0,1,4,3],[1,4,7,6],[2,5,8,7],[3,4,1,0],[6,3,4,7]];
+ghosts.forEach((g,i)=>{const floor=Math.round(g.home.y/5.2);g.patrol=ghostPatrolRoutes[i].map((roomIndex)=>{const room=roomDefs.find(r=>r.floor===floor&&r.index===roomIndex);return new THREE.Vector3(room.x+(i%2?1.1:-1.1),room.y,room.z+(i%2?-1.1:1.1));});g.patrolIndex=0;g.patrolWait=i*.35;g.patrolPause=[.65,1.15,.35,1.5,.9][i];});
 function awakenGhost(g){g.active=true;g.mesh.visible=true;g.mesh.scale.setScalar(.08);g.revealTime=.9;g.alerted=false;}
 const keys={};let started=false,paused=false,flashOn=true,hiding=false,hideSpot=null,solved=0,yaw=0,pitch=0,beat=0,threatBand=0,currentFloor=0,currentRoom=null,noiseClock=0,noiseX=0,noiseZ=0;const clock=new THREE.Clock();const $=id=>document.getElementById(id);
 let audioCtx=null,ambientGain=null,masterGain=null,lastHeartbeat=0,lastFootstep=0,lastWhisper=0;let masterVolume=.7;
@@ -325,7 +327,7 @@ function animate(){
    else if(!hiding&&!g.searching&&g.mesh.visible&&g.kind!=='keeper'){
     g.patrolWait=Math.max(0,g.patrolWait-dt);
     const target=g.patrol[g.patrolIndex],dx=target.x-g.mesh.position.x,dz=target.z-g.mesh.position.z,dist=Math.hypot(dx,dz);
-    if(dist<.22){g.patrolIndex=(g.patrolIndex+1)%g.patrol.length;g.patrolWait=.45;}
+    if(dist<.22){g.patrolIndex=(g.patrolIndex+1)%g.patrol.length;g.patrolWait=g.patrolPause||.65;}
     else if(g.patrolWait<=0){g.mesh.position.x+=dx/dist*g.speed*.38*dt;g.mesh.position.z+=dz/dist*g.speed*.38*dt;}
    }
    g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);
