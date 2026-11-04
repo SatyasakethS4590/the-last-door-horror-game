@@ -116,6 +116,34 @@ keyMesh.position.set(studyRoom.x+2,studyRoom.y,studyRoom.z);keyMesh.visible=fals
 const archiveDoor=box(archiveRoom.x,archiveRoom.y+1.55,archiveRoom.z+5.72,2.8,3.1,.22,mat(0x33251b));
 const archiveDoorCollision={x:archiveRoom.x,z:archiveRoom.z+5.72,w:2.8,d:.22,floor:2};wallSegments.push(archiveDoorCollision);
 function nearPosition(x,z,range=2.5){return Math.hypot(camera.position.x-x,camera.position.z-z)<range}
+const loreEntries=[
+["Entrance Hall","A delivery receipt is dated the morning after the family disappeared."],
+["Living Room","A child wrote beneath the sofa: Dad says the house remembers everything."],
+["Dining Room","The seating plan always placed the youngest child beside the mother."],
+["Kitchen","A recipe card has five names written on the back."],
+["Library","A torn catalogue lists a book called The House That Keeps Us."],
+["Study","The father's notes repeat: I should have opened the door."],
+["Guest Bedroom","A visitor register contains a name crossed out five times."],
+["Music Room","The music box melody has five notes, then a pause."],
+["Staircase Hall","The banister is scratched at five different heights."],
+["Parents Bedroom","A letter says the parents planned to leave, but could not agree on taking the children."],
+["Sons Bedroom","A school exercise asks what makes a family. The answer: Staying."],
+["Daughters Bedroom","A paper star is labelled for each family member."],
+["Nursery","A lullaby book says: Sing all the verses, even the sad one."],
+["Family Lounge","A calendar circles the same date every year."],
+["Bathroom","A fogged mirror once held the words: We were here together."],
+["Dressing Room","A small ribbon is tied around a key."],
+["Art Room","Every unfinished portrait leaves one space at the edge."],
+["Upper Stair Hall","Five height marks stop at the same date."],
+["Attic","A suitcase contains five train tickets that were never used."],
+["Storage Room","A box of keepsakes is labelled: Do not divide these."],
+["Locked Archive","The archive index refers to four memories and one shared truth."],
+["Old Servant Room","A journal says the house grew quiet after the final argument."],
+["Hidden Passage","A message reads: The way forward is behind what we fear."],
+["Secret Study","The final pages explain that each family member believed they had failed the others."],
+["The Last Room","The portrait has five figures, but only one shadow."]
+];
+const loreObjects=loreEntries.map((entry,i)=>{const r=roomDefs[i],g=new THREE.Group();const page=new THREE.Mesh(new THREE.BoxGeometry(.58,.72,.055),new THREE.MeshStandardMaterial({color:0xc8b98f,roughness:1}));page.position.y=.95;g.add(page);const mark=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),new THREE.MeshBasicMaterial({color:0xe0c98d}));mark.position.y=1.35;g.add(mark);g.position.set(r.x+2.5,r.y,r.z+2.5);scene.add(g);return{mesh:g,room:entry[0],story:entry[1],found:false}});
 const clueObjects=clues.map((c,i)=>{const r=roomDefs.find(x=>x.floor===c.room[0]&&x.index===c.room[1]);const g=new THREE.Group();const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.38),new THREE.MeshStandardMaterial({color:0xd3bd8b,emissive:0x58401b}));orb.position.y=1;g.add(orb);const l=new THREE.PointLight(0xd8bd83,.8,4);l.position.y=1;g.add(l);g.position.set(r.x,r.y,r.z);scene.add(g);return {mesh:g,found:false,story:c.story}});
 function makeGhost(color,pos,speed,kind){
  const g=new THREE.Group();
