@@ -12,12 +12,12 @@ Serve this folder from a local web server (for example, `python -m http.server 8
 - **1, 2, 3** — enter the study puzzle sequence
 - **F** — flashlight
 - **J** — family case file
-- **Esc** — release mouse (click the game to resume)
+- **Esc** — open the pause menu; choose Resume, Settings, or Main Menu
 - **Touch devices** — use the on-screen direction/action buttons; drag the scene to look around
 
 ## Archive puzzle
 Read the inscription in the library. It hints at the sequence **2, 1, 3**. Enter that sequence while near the study lock, collect the key from the study, then use it at the locked archive door on the top floor.
 
-Progress for collected memories, puzzle completion, archive key, and archive door unlock is saved in this browser. Ambient sound and heartbeat effects start after entering the mansion.
+Progress for collected memories, puzzle completion, archive key, archive door unlock, floor, and player position is saved in this browser. The game autosaves periodically and when paused. The main menu includes New Game, Continue, and Settings; the pause menu includes Resume, Settings, and Main Menu. Master volume controls the procedural sound effects and ambience. Ambient sound and heartbeat effects start after entering the mansion.
 
 This is an early playable prototype, not the complete planned 7–9 hour game. Full browser playtesting and further level design are still needed.
