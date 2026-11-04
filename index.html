@@ -201,7 +201,7 @@ function makeGhost(color,pos,speed,kind){
  const wisps=[];for(let i=0;i<4;i++){const wisp=new THREE.Mesh(new THREE.SphereGeometry(.075+(i%2)*.035,8,8),new THREE.MeshBasicMaterial({color:kind==='keeper'?0xe8d8a6:0xa9d6e8,transparent:true,opacity:.55}));const a=i*Math.PI/2;wisp.position.set(Math.cos(a)*.65,.45+(i%2)*.55,Math.sin(a)*.65);g.add(wisp);wisps.push(wisp)}
  const ghostLight=new THREE.PointLight(kind==='keeper'?0xd7bd83:0x8abbd8,1.1,5);ghostLight.position.y=1.1;g.add(ghostLight);
  g.position.copy(pos);g.visible=false;g.scale.setScalar(.08);scene.add(g);
- return {mesh:g,speed,kind,active:false,recovering:false,phase:Math.random()*4,home:pos.clone(),patrolIndex:0,patrolWait:0,alerted:false,patrol:[new THREE.Vector3(pos.x+2,pos.y,pos.z),new THREE.Vector3(pos.x,pos.y,pos.z+2),new THREE.Vector3(pos.x-2,pos.y,pos.z),new THREE.Vector3(pos.x,pos.y,pos.z-2)],vanishClock:5,ambushClock:10,investigateClock:0,searching:false,searchTime:0,searchCooldown:0,revealTime:0,aura,wisps,ghostLight}
+ return {mesh:g,speed,kind,active:false,recovering:false,phase:Math.random()*4,home:pos.clone(),patrolIndex:0,patrolWait:0,alerted:false,patrol:[new THREE.Vector3(pos.x+2,pos.y,pos.z),new THREE.Vector3(pos.x,pos.y,pos.z+2),new THREE.Vector3(pos.x-2,pos.y,pos.z),new THREE.Vector3(pos.x,pos.y,pos.z-2)],vanishClock:5,vanishOut:false,vanishFade:0,ambushClock:10,investigateClock:0,searching:false,searchTime:0,searchCooldown:0,revealTime:0,aura,wisps,ghostLight}
 }
 const sideStories=[
  {name:'The Mother',records:[9,12,13],story:'The mother kept writing lullabies because she feared the children would forget her voice. Her final note says she wanted them to stay together.'},
@@ -295,7 +295,7 @@ function animate(){
    const floor=Math.round(g.mesh.position.y/5.2);
    if(floor!==currentFloor)return;
    const p=new THREE.Vector3(camera.position.x-g.mesh.position.x,0,camera.position.z-g.mesh.position.z);
-   const d=p.length();nearest=Math.min(nearest,d);g.phase+=dt;if(g.revealTime>0){g.revealTime=Math.max(0,g.revealTime-dt);const reveal=1-g.revealTime/.9;g.mesh.scale.setScalar(.08+.92*THREE.MathUtils.smoothstep(reveal,0,1));}else if(g.mesh.scale.x!==1)g.mesh.scale.setScalar(1);g.mesh.position.y=g.home.y+Math.sin(g.phase*(g.kind==='keeper'?2.1:1.4))*.11;g.mesh.rotation.y=Math.sin(g.phase*.7)*.12;g.aura.rotation.z+=dt*(g.kind==='keeper'?.9:.45);g.aura.material.opacity=.18+Math.sin(g.phase*2)*.12;g.ghostLight.intensity=.75+Math.sin(g.phase*2.4)*.35;g.wisps.forEach((w,i)=>{const a=g.phase*(.65+i*.08)+i*Math.PI/2;w.position.x=Math.cos(a)*(.62+i*.04);w.position.z=Math.sin(a)*(.62+i*.04);w.position.y=.45+Math.sin(g.phase*1.7+i)*.28;});
+   const d=p.length();nearest=Math.min(nearest,d);g.phase+=dt;if(g.vanishOut){g.vanishFade=Math.max(0,g.vanishFade-dt);g.mesh.scale.setScalar(.08+.92*THREE.MathUtils.smoothstep(g.vanishFade/.75,0,1));if(g.vanishFade<=0){g.vanishOut=false;g.mesh.visible=false;}}else if(g.revealTime>0){g.revealTime=Math.max(0,g.revealTime-dt);const reveal=1-g.revealTime/.9;g.mesh.scale.setScalar(.08+.92*THREE.MathUtils.smoothstep(reveal,0,1));}else if(g.mesh.scale.x!==1)g.mesh.scale.setScalar(1);const floatRate=g.kind==='keeper'?2.1:g.kind==='vanisher'?2.7:g.kind==='ambusher'?1.05:1.5;const floatHeight=g.kind==='keeper'?.2:g.kind==='vanisher'?.27:g.kind==='ambusher'?.1:.16;g.mesh.position.y=g.home.y+Math.sin(g.phase*floatRate)*floatHeight;g.mesh.rotation.y=Math.sin(g.phase*.7)*.16;g.mesh.rotation.z=Math.sin(g.phase*(g.kind==='ambusher'?1.8:1.15))*(g.kind==='ambusher'?.1:.045);g.mesh.rotation.x=Math.cos(g.phase*.9)*.035;g.aura.rotation.z+=dt*(g.kind==='keeper'?.9:.45);g.aura.material.opacity=.18+Math.sin(g.phase*2)*.12;g.ghostLight.intensity=.75+Math.sin(g.phase*2.4)*.35;g.wisps.forEach((w,i)=>{const a=g.phase*(.65+i*.08)+i*Math.PI/2;w.position.x=Math.cos(a)*(.62+i*.04);w.position.z=Math.sin(a)*(.62+i*.04);w.position.y=.45+Math.sin(g.phase*1.7+i)*.28;});
    g.searchCooldown=Math.max(0,g.searchCooldown-dt);
    if(hiding&&hideSpot&&hideSpot.floor===currentFloor&&g.searchCooldown<=0){
     const hd=Math.hypot(g.mesh.position.x-hideSpot.x,g.mesh.position.z-hideSpot.z);
@@ -307,9 +307,10 @@ function animate(){
    }else if(!hiding){g.searching=false;g.searchTime=0;}
    if(g.kind==='vanisher'){
     g.vanishClock-=dt;
-    if(g.vanishClock<=0){g.mesh.visible=!g.mesh.visible;g.vanishClock=g.mesh.visible?4.5:2.2;if(g.mesh.visible){g.mesh.position.set(g.home.x+Math.sin(g.phase)*2,g.home.y,g.home.z+Math.cos(g.phase)*2);say('A shape flickers at the edge of your vision.')}}
+    if(g.vanishClock<=0&&!g.vanishOut&&g.mesh.visible){g.vanishOut=true;g.vanishFade=.75;g.vanishClock=5.8;}
+    if(g.vanishClock<=0&&!g.mesh.visible&&!g.vanishOut){const angle=g.phase*1.7;g.mesh.position.set(g.home.x+Math.sin(angle)*2.4,g.home.y,g.home.z+Math.cos(angle)*2.4);g.mesh.visible=true;g.mesh.scale.setScalar(.08);g.revealTime=.9;g.vanishClock=5.8;say('A shape gathers in the mist nearby.');}
    }
-   if(g.kind==='ambusher'){g.ambushClock-=dt;if(g.ambushClock<=0&&!hiding){const a=Math.atan2(p.z,p.x);g.mesh.position.set(camera.position.x-Math.cos(a)*5,g.home.y,camera.position.z-Math.sin(a)*5);g.ambushClock=12;say('Footsteps stop behind you.')}}
+   if(g.kind==='ambusher'){g.ambushClock-=dt;if(g.ambushClock<=0&&!hiding){const behindX=Math.sin(yaw),behindZ=Math.cos(yaw);g.mesh.position.set(camera.position.x+behindX*5,g.home.y,camera.position.z+behindZ*5);g.mesh.visible=true;g.mesh.scale.setScalar(.08);g.revealTime=.9;g.ambushClock=15;say('A presence appears somewhere behind you.');}}
    let chase=!hiding,speed=g.speed;
    if(g.kind==='stalker'){chase=chase&&d<14;if(flashOn&&d<7)speed*=.35}
    if(g.kind==='investigator'){g.investigateClock+=dt;chase=chase&&d<10&&g.investigateClock>1.8;if(d>10){g.mesh.position.x=g.home.x+Math.sin(g.phase*.35)*2;g.mesh.position.z=g.home.z+Math.cos(g.phase*.35)*2}}
