@@ -80,7 +80,7 @@ function movePlayer(dx,dz){
  if(!blocked(camera.position.x,nz,currentFloor))camera.position.z=THREE.MathUtils.clamp(nz,-17.25,17.25);
 }
 function saveProgress(){
- try{localStorage.setItem('theLastDoorProgress',JSON.stringify({found:clueObjects.map(c=>c.found),hasArchiveKey,puzzleSolved,archiveUnlocked,currentFloor,player:{x:camera.position.x,y:camera.position.y,z:camera.position.z},yaw,pitch}))}catch(e){}
+ try{localStorage.setItem('theLastDoorProgress',JSON.stringify({found:clueObjects.map(c=>c.found),hasArchiveKey,puzzleSolved,archiveUnlocked,currentFloor,player:{x:camera.position.x,y:camera.position.y,z:camera.position.z},notes:loreObjects.map(n=>n.found),yaw,pitch}))}catch(e){}
 }
 function loadProgress(){
  try{
