@@ -13,11 +13,11 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x05070b);scene.fog=new THREE.FogExp2(0x090c12,.009);
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,160);camera.position.set(0,1.65,0);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));document.body.appendChild(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0x9aabc0,0x111018,.4));const moon=new THREE.DirectionalLight(0xa8c0d8,.55);moon.position.set(-18,25,12);scene.add(moon);
 const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.92});
 const wallMat=[mat(0x34343a),mat(0x292b34),mat(0x3a302d)],floorMat=[mat(0x292725),mat(0x28272d),mat(0x25242b)];
-function box(x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);scene.add(o);return o}
+function box(x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
 const roomNames=[
 ['Entrance Hall','Living Room','Dining Room','Kitchen','Library','Study','Guest Bedroom','Music Room','Staircase Hall'],
 ['Parents’ Bedroom','Son’s Bedroom','Daughter’s Bedroom','Nursery','Family Lounge','Bathroom','Dressing Room','Art Room','Upper Stair Hall'],
@@ -52,12 +52,32 @@ for(const r of roomDefs){
    else addWall(xx,y+1.8,z,.25,3.6,11.8,floor);
   }
  }
- // Simple room dressing: furniture silhouettes and a warm lamp.
- if(r.index%3===0)box(x-2,y+.65,z+1,2.3,1.3,1.1,mat(0x332b28));
- else if(r.index%3===1)box(x+2,y+.5,z-1,2.2,1,1.4,mat(0x343039));
- else box(x,y+.45,z+2,2.4,.9,1.3,mat(0x302b25));
- const light=new THREE.PointLight(floor===2?0x9babc7:0xb6a17f,floor===2?.55:.75,12);light.position.set(x,y+3.2,z);scene.add(light);
+ // Room dressing: layered furniture, rugs, shelves and framed family portraits.
+ const wood=mat(0x29201b),fabric=mat(0x45404a),brass=mat(0x806747),rug=mat(0x30252b);
+ box(x,y+.025,z,5.2,.05,4.2,rug);
+ if(r.index%3===0){
+  // Bedroom / private room: bed, headboard and bedside tables.
+  box(x-1.2,y+.55,z-1.1,3.1,.55,2.3,wood);box(x-1.2,y+.88,z-1.1,3,.18,2.2,fabric);box(x-1.2,y+1.15,z-2.05,3.1,1.25,.18,wood);
+  box(x-2.8,y+.45,z+1.8,.75,.9,.75,wood);box(x+.7,y+.45,z+1.8,.75,.9,.75,wood);
+ }else if(r.index%3===1){
+  // Library / study: tall bookcase with individual book spines and a desk.
+  box(x+3,y+1.55,z-1, .35,3.1,3.8,wood);
+  for(let shelf=0;shelf<4;shelf++){box(x+2.78,y+.55+shelf*.72,z-1,.18,.12,3.8,brass);for(let b=0;b<7;b++)box(x+2.55,y+.9+shelf*.72,z-2.55+b*.48,.22,.55,.28,mat([0x57413a,0x343f4a,0x6a5942][(b+shelf)%3]));}
+  box(x-1,y+.75,z+1.8,2.5,.18,1.2,wood);box(x-1,y+.38,z+1.8,.16,.75,.16,wood);box(x+.1,y+.38,z+1.8,.16,.75,.16,wood);
+ }else{
+  // Shared rooms: long table, chairs and a low cabinet.
+  box(x,y+.72,z+1.3,3.4,.18,1.5,wood);for(const dx of [-1.35,1.35])for(const dz of [.8,1.8]){box(x+dx,y+.38,z+dz,.18,.75,.18,wood);box(x+dx,y+.78,z+dz,.85,.12,.8,fabric);}
+  box(x-3,y+.65,z-1,1.4,1.3,2,wood);
+ }
+ // A framed portrait on the back wall gives each floor a family-history detail.
+ box(x,y+2.45,z-5.72,1.35,1.55,.12,brass);box(x,y+2.45,z-5.63,1.08,1.28,.06,mat(0x171a20));
+ const light=new THREE.PointLight(floor===2?0x9babc7:0xb6a17f,floor===2?.68:.82,15);light.position.set(x,y+3.25,z);light.castShadow=true;light.shadow.mapSize.set(512,512);scene.add(light);
 }
+ // Floating dust motes catch the weak mansion lights on every floor.
+ const dustGeometry=new THREE.BufferGeometry(),dustPositions=[];
+ for(let i=0;i<520;i++){const room=roomDefs[i%roomDefs.length];dustPositions.push(room.x+(Math.random()-.5)*10,room.y+.35+Math.random()*3.1,room.z+(Math.random()-.5)*10);}
+ dustGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dustPositions,3));
+ const dustMotes=new THREE.Points(dustGeometry,new THREE.PointsMaterial({color:0xb9c2c9,size:.045,transparent:true,opacity:.28,depthWrite:false}));scene.add(dustMotes);
 // Hide spots: wardrobes placed in selected bedrooms and the old servant room.
 const hideSpots=[[0,6],[1,0],[1,1],[1,2],[2,3]].map(([floor,index])=>{
  const r=roomDefs.find(q=>q.floor===floor&&q.index===index);
