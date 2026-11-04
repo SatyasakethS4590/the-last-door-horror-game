@@ -45,11 +45,11 @@ for(const r of roomDefs){
   if(a.side==='n'||a.side==='s'){
    const zz=z+(a.side==='n'?-5.9:5.9);
    if(doorGap){addWall(x-4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x+4.1,y+1.8,zz,3.6,3.6,.25,floor);addWall(x,y+3.35,zz,2.2,.5,.25,floor);if(a.side==='s'){const trim=mat(0x72583b);box(x-1.12,y+1.8,zz,.16,3.6,.32,trim);box(x+1.12,y+1.8,zz,.16,3.6,.32,trim);box(x,y+3.58,zz,2.4,.16,.32,trim);const panel=box(x-0.98,y+1.65,zz,1.95,3.25,.13,mat(0x30231d));panel.rotation.y=-.72;box(x-1.83,y+1.65,zz-.62,.09,.09,.09,mat(0xb58a4e));}}
-   else addWall(x,y+1.8,zz,11.8,3.6,.25,floor);
+   else{addWall(x-4.4,y+1.8,zz,3,3.6,.25,floor);addWall(x+4.4,y+1.8,zz,3,3.6,.25,floor);addWall(x,y+.55,zz,5.8,1.1,.25,floor);addWall(x,y+3.25,zz,5.8,1.1,.25,floor);const glass=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.95),new THREE.MeshStandardMaterial({color:0x344b60,transparent:true,opacity:.38,roughness:.25,metalness:.25,side:THREE.DoubleSide}));glass.position.set(x,y+2.12,zz+(a.side==='s'?.14:-.14));scene.add(glass);const frame=mat(0x765a3a);box(x-1.52,y+2.12,zz, .12,2.2,.18,frame);box(x+1.52,y+2.12,zz,.12,2.2,.18,frame);box(x,y+3.2,zz,3.15,.12,.18,frame);box(x,y+1.04,zz,3.15,.12,.18,frame);box(x,y+2.12,zz, .07,2.05,.2,frame);box(x,y+2.12,zz,2.95,.07,.2,frame);}
   }else{
    const xx=x+(a.side==='w'?-5.9:5.9);
    if(doorGap){addWall(xx,y+1.8,z-4.1,.25,3.6,3.6,floor);addWall(xx,y+1.8,z+4.1,.25,3.6,3.6,floor);addWall(xx,y+3.35,z, .25,.5,2.2,floor);if(a.side==='e'){const trim=mat(0x72583b);box(xx,y+1.8,z-1.12,.32,3.6,.16,trim);box(xx,y+1.8,z+1.12,.32,3.6,.16,trim);box(xx,y+3.58,z,.32,.16,2.4,trim);const panel=box(xx,y+1.65,z-.98, .13,3.25,1.95,mat(0x30231d));panel.rotation.y=.72;box(xx-.62,y+1.65,z-1.83,.09,.09,.09,mat(0xb58a4e));}}
-   else addWall(xx,y+1.8,z,.25,3.6,11.8,floor);
+   else{addWall(xx,y+1.8,z-4.4,.25,3.6,3,floor);addWall(xx,y+1.8,z+4.4,.25,3.6,3,floor);addWall(xx,y+.55,z,.25,1.1,5.8,floor);addWall(xx,y+3.25,z,.25,1.1,5.8,floor);const glass=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.95),new THREE.MeshStandardMaterial({color:0x344b60,transparent:true,opacity:.38,roughness:.25,metalness:.25,side:THREE.DoubleSide}));glass.rotation.y=Math.PI/2;glass.position.set(xx+(a.side==='e'?.14:-.14),y+2.12,z);scene.add(glass);const frame=mat(0x765a3a);box(xx,y+2.12,z-1.52,.18,2.2,.12,frame);box(xx,y+2.12,z+1.52,.18,2.2,.12,frame);box(xx,y+3.2,z,.18,.12,3.15,frame);box(xx,y+1.04,z,.18,.12,3.15,frame);box(xx,y+2.12,z,.2,2.05,.07,frame);box(xx,y+2.12,z, .2,.07,2.95,frame);}
   }
  }
  // Room dressing: layered furniture, rugs, shelves and framed family portraits.
@@ -78,6 +78,11 @@ for(const r of roomDefs){
  for(let i=0;i<520;i++){const room=roomDefs[i%roomDefs.length];dustPositions.push(room.x+(Math.random()-.5)*10,room.y+.35+Math.random()*3.1,room.z+(Math.random()-.5)*10);}
  dustGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dustPositions,3));
  const dustMotes=new THREE.Points(dustGeometry,new THREE.PointsMaterial({color:0xb9c2c9,size:.045,transparent:true,opacity:.28,depthWrite:false}));scene.add(dustMotes);
+// Exterior rain: visible through the mansion windows, with distant storm ambience visuals.
+const rainCount=720,rainPositions=new Float32Array(rainCount*3),rainSpeeds=new Float32Array(rainCount);
+for(let i=0;i<rainCount;i++){const edge=i%4;rainPositions[i*3]=edge<2?(edge===0?-19:19):(Math.random()-.5)*42;rainPositions[i*3+1]=Math.random()*17;rainPositions[i*3+2]=edge>=2?(edge===2?-19:19):(Math.random()-.5)*42;rainSpeeds[i]=5+Math.random()*7;}
+const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));const rain=new THREE.Points(rainGeometry,new THREE.PointsMaterial({color:0x9bb4c8,size:.055,transparent:true,opacity:.48,depthWrite:false}));scene.add(rain);
+const stormLight=new THREE.PointLight(0x718ba8,0,32);stormLight.position.set(-19,13,-19);scene.add(stormLight);let stormClock=0;
 // Hide spots: wardrobes placed in selected bedrooms and the old servant room.
 const hideSpots=[[0,6],[1,0],[1,1],[1,2],[2,3]].map(([floor,index])=>{
  const r=roomDefs.find(q=>q.floor===floor&&q.index===index);
@@ -269,7 +274,7 @@ document.querySelectorAll('#touch [data-key]').forEach(b=>{const code=b.dataset.
 document.querySelectorAll('#touch [data-tap]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();const code=b.dataset.tap;document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true}))}));
 let lookTouch=null;renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&started){lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId)}});renderer.domElement.addEventListener('pointermove',e=>{if(lookTouch&&e.pointerId===lookTouch.id){const dx=e.clientX-lookTouch.x,dy=e.clientY-lookTouch.y;yaw-=dx*.006;pitch=Math.max(-1.1,Math.min(1.1,pitch-dy*.006));lookTouch.x=e.clientX;lookTouch.y=e.clientY}});['pointerup','pointercancel','lostpointercapture'].forEach(type=>renderer.domElement.addEventListener(type,e=>{if(lookTouch&&e.pointerId===lookTouch.id)lookTouch=null}));
 function animate(){
- requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(started&&!paused){autosaveClock+=dt;if(autosaveClock>=8){saveProgress();autosaveClock=0}}
+ requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);const rainAttr=rainGeometry.attributes.position;for(let i=0;i<rainCount;i++){const j=i*3;rainAttr.array[j+1]-=rainSpeeds[i]*dt;if(rainAttr.array[j+1]<0)rainAttr.array[j+1]=17;}rainAttr.needsUpdate=true;stormClock+=dt;if(stormClock>8+Math.random()*5){stormClock=0;stormLight.intensity=2.8;}else stormLight.intensity=Math.max(0,stormLight.intensity-dt*2.4);if(started&&!paused){autosaveClock+=dt;if(autosaveClock>=8){saveProgress();autosaveClock=0}}
  if(started&&!paused&&$('case').style.display!=='block'){
   camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
   const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),v=new THREE.Vector3();
