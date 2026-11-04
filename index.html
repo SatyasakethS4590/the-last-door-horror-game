@@ -8,6 +8,7 @@
 <div id="touch"><div class="pad"><span></span><button data-key="KeyW">▲</button><span></span><button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button></div><div class="actions"><button data-tap="KeyE">INTERACT</button><button data-tap="KeyF">LIGHT</button><button data-tap="KeyJ">CASE</button><button data-tap="Digit1">1</button><button data-tap="Digit2">2</button><button data-tap="Digit3">3</button></div></div>
 <div id="case"><h2>THE FAMILY CASE FILE</h2><div id="caseText"></div><button id="close">CLOSE (J)</button></div>
 <div id="start"><div id="panel"><h1>THE LAST DOOR</h1><p>Three floors. Twenty-five rooms. One family secret.</p><p>Explore the abandoned mansion, inspect clues, avoid the spirits and uncover the truth hidden on the top floor.</p><div id="mainMenu"><button id="newGame">NEW GAME</button> <button id="continueGame">CONTINUE</button> <button id="openSettings">SETTINGS</button></div><div id="settingsPanel" style="display:none"><h2>SETTINGS</h2><p>MASTER VOLUME: <span id="volumeValue">70%</span></p><input id="volumeSlider" type="range" min="0" max="100" value="70" style="width:85%"><p>WASD move · Mouse look · E interact · F flashlight · J case file</p><button id="backMenu">BACK</button></div><p style="margin-top:18px"><button id="resetProgress" type="button">RESET STORY</button></p></div></div>
+<div id="pause" style="display:none;position:fixed;inset:0;z-index:7;place-items:center;background:#03050aee"><div id="pausePanel" style="max-width:520px;margin:18px;padding:28px;text-align:center;background:#0b1119;border:1px solid #697887"><h1>PAUSED</h1><p>Your progress is saved automatically.</p><button id="resume">RESUME</button> <button id="pauseSettings">SETTINGS</button><button id="returnMenu">MAIN MENU</button><div id="pauseVolume" style="display:none"><p>MASTER VOLUME: <span id="pauseVolumeValue">70%</span></p><input id="pauseVolumeSlider" type="range" min="0" max="100" value="70" style="width:85%"><p><button id="pauseSettingsBack">BACK</button></p></div></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x05070b);scene.fog=new THREE.FogExp2(0x090c12,.009);
@@ -79,13 +80,13 @@ function movePlayer(dx,dz){
  if(!blocked(camera.position.x,nz,currentFloor))camera.position.z=THREE.MathUtils.clamp(nz,-17.25,17.25);
 }
 function saveProgress(){
- try{localStorage.setItem('theLastDoorProgress',JSON.stringify({found:clueObjects.map(c=>c.found),hasArchiveKey,puzzleSolved,archiveUnlocked}))}catch(e){}
+ try{localStorage.setItem('theLastDoorProgress',JSON.stringify({found:clueObjects.map(c=>c.found),hasArchiveKey,puzzleSolved,archiveUnlocked,currentFloor,player:{x:camera.position.x,y:camera.position.y,z:camera.position.z},yaw,pitch}))}catch(e){}
 }
 function loadProgress(){
  try{
   const data=JSON.parse(localStorage.getItem('theLastDoorProgress')||'null');
   if(!data||!Array.isArray(data.found))return;
-  data.found.forEach((found,i)=>{if(found&&clueObjects[i]){clueObjects[i].found=true;clueObjects[i].mesh.visible=false;solved++;if(ghosts[i]){ghosts[i].active=true;ghosts[i].mesh.visible=true}}});hasArchiveKey=!!data.hasArchiveKey;puzzleSolved=!!data.puzzleSolved;archiveUnlocked=!!data.archiveUnlocked;keyMesh.visible=puzzleSolved&&!hasArchiveKey;if(archiveUnlocked){archiveDoor.visible=false;const wallIndex=wallSegments.indexOf(archiveDoorCollision);if(wallIndex>=0)wallSegments.splice(wallIndex,1)}
+  data.found.forEach((found,i)=>{if(found&&clueObjects[i]){clueObjects[i].found=true;clueObjects[i].mesh.visible=false;solved++;if(ghosts[i]){ghosts[i].active=true;ghosts[i].mesh.visible=true}}});if(Number.isInteger(data.currentFloor)&&data.currentFloor>=0&&data.currentFloor<=2){currentFloor=data.currentFloor;if(data.player&&Number.isFinite(data.player.x)&&Number.isFinite(data.player.z)){camera.position.set(data.player.x,currentFloor*5.2+1.65,data.player.z)}if(Number.isFinite(data.yaw))yaw=data.yaw;if(Number.isFinite(data.pitch))pitch=data.pitch}hasArchiveKey=!!data.hasArchiveKey;puzzleSolved=!!data.puzzleSolved;archiveUnlocked=!!data.archiveUnlocked;keyMesh.visible=puzzleSolved&&!hasArchiveKey;if(archiveUnlocked){archiveDoor.visible=false;const wallIndex=wallSegments.indexOf(archiveDoorCollision);if(wallIndex>=0)wallSegments.splice(wallIndex,1)}
   refresh();
   $('task').textContent='OBJECTIVE: Family memories '+solved+'/5';
  }catch(e){}
@@ -160,12 +161,22 @@ function refresh(){ $('caseText').innerHTML='<p><b>MEMORIES: '+solved+'/5</b></p
 let previousFloor=0;
 function changeFloor(f){previousFloor=currentFloor;currentFloor=f;const target=stairMarkers[f];camera.position.set(target.x,target.y+1.65,target.z+2);yaw=0;pitch=0;currentRoom=null;$('room').textContent='FLOOR '+(f+1);say('You reach floor '+(f+1)+'. The air feels colder.')}
 loadProgress();
-function beginGame(){ $('start').style.display='none';started=true;startAudio();renderer.domElement.requestPointerLock?.();say('The mansion door closes behind you.');}
-$('newGame').onclick=()=>{if(solved>0&&!confirm('Start a new story? Your saved progress will be cleared.'))return;try{localStorage.removeItem('theLastDoorProgress')}catch(e){}solved=0;puzzleStep=0;puzzleSolved=false;hasArchiveKey=false;archiveUnlocked=false;clueObjects.forEach(c=>{c.found=false;c.mesh.visible=true});ghosts.forEach(g=>{g.active=false;g.visible=false;g.mesh.visible=false;g.mesh.position.copy(g.home);g.recovering=false});keyMesh.visible=false;archiveDoor.visible=true;if(!wallSegments.includes(archiveDoorCollision))wallSegments.push(archiveDoorCollision);currentFloor=0;previousFloor=0;camera.position.set(-12,1.65,-12);currentRoom=null;$('task').textContent='OBJECTIVE: Explore the mansion and find the family memories.';refresh();beginGame();};
+function beginGame(){ $('start').style.display='none';$('pause').style.display='none';started=true;paused=false;startAudio();renderer.domElement.requestPointerLock?.();say('The mansion door closes behind you.');}
+function setVolume(value){masterVolume=Number(value)/100;$('volumeValue').textContent=value+'%';$('pauseVolumeValue').textContent=value+'%';$('volumeSlider').value=value;$('pauseVolumeSlider').value=value;if(masterGain&&audioCtx)masterGain.gain.setTargetAtTime(masterVolume,audioCtx.currentTime,.03)}
+function pauseGame(){if(!started||paused||$('case').style.display==='block')return;paused=true;saveProgress();$('pause').style.display='grid';document.exitPointerLock?.()}
+function resumeGame(){if(!paused)return;paused=false;$('pause').style.display='none';renderer.domElement.requestPointerLock?.()}
+$('newGame').onclick=()=>{if(solved>0&&!confirm('Start a new story? Your saved progress will be cleared.'))return;try{localStorage.removeItem('theLastDoorProgress')}catch(e){}solved=0;puzzleStep=0;puzzleSolved=false;hasArchiveKey=false;archiveUnlocked=false;clueObjects.forEach(c=>{c.found=false;c.mesh.visible=true});ghosts.forEach(g=>{g.active=false;g.mesh.visible=false;g.mesh.position.copy(g.home);g.recovering=false;g.searching=false;g.investigateClock=0});keyMesh.visible=false;archiveDoor.visible=true;if(!wallSegments.includes(archiveDoorCollision))wallSegments.push(archiveDoorCollision);currentFloor=0;previousFloor=0;camera.position.set(-12,1.65,-12);yaw=0;pitch=0;currentRoom=null;$('task').textContent='OBJECTIVE: Explore the mansion and find the family memories.';refresh();saveProgress();beginGame();};
 $('continueGame').onclick=()=>beginGame();
 $('openSettings').onclick=()=>{$('mainMenu').style.display='none';$('settingsPanel').style.display='block'};
 $('backMenu').onclick=()=>{$('settingsPanel').style.display='none';$('mainMenu').style.display='block'};
-$('volumeSlider').oninput=e=>{masterVolume=Number(e.target.value)/100;$('volumeValue').textContent=e.target.value+'%';if(masterGain)masterGain.gain.setTargetAtTime(masterVolume,audioCtx.currentTime,.03)};
+$('volumeSlider').oninput=e=>setVolume(e.target.value);
+$('pauseVolumeSlider').oninput=e=>setVolume(e.target.value);
+$('resume').onclick=resumeGame;
+$('pauseSettings').onclick=()=>{$('pauseVolume').style.display='block';$('pauseSettings').style.display='none'};
+$('pauseSettingsBack').onclick=()=>{$('pauseVolume').style.display='none';$('pauseSettings').style.display='block'};
+$('returnMenu').onclick=()=>{saveProgress();paused=false;started=false;$('pause').style.display='none';$('start').style.display='grid';$('mainMenu').style.display='block';$('settingsPanel').style.display='none';document.exitPointerLock?.()};
+addEventListener('keydown',e=>{if(e.code==='Escape'&&started){e.preventDefault();pauseGame()}});
+let autosaveClock=0;
 $('resetProgress').onclick=()=>{if(confirm('Reset all THE LAST DOOR story progress? Your collected clues and archive unlock will be cleared.')){try{localStorage.removeItem('theLastDoorProgress')}catch(e){}location.reload()}};
 $('close').onclick=()=>{$('case').style.display='none';renderer.domElement.requestPointerLock?.()};
 addEventListener('mousemove',e=>{if(started&&document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.002;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.002))}});
@@ -202,8 +213,8 @@ document.querySelectorAll('#touch [data-key]').forEach(b=>{const code=b.dataset.
 document.querySelectorAll('#touch [data-tap]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();const code=b.dataset.tap;document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true}))}));
 let lookTouch=null;renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&started){lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId)}});renderer.domElement.addEventListener('pointermove',e=>{if(lookTouch&&e.pointerId===lookTouch.id){const dx=e.clientX-lookTouch.x,dy=e.clientY-lookTouch.y;yaw-=dx*.006;pitch=Math.max(-1.1,Math.min(1.1,pitch-dy*.006));lookTouch.x=e.clientX;lookTouch.y=e.clientY}});['pointerup','pointercancel','lostpointercapture'].forEach(type=>renderer.domElement.addEventListener(type,e=>{if(lookTouch&&e.pointerId===lookTouch.id)lookTouch=null}));
 function animate(){
- requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
- if(started&&$('case').style.display!=='block'){
+ requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(started&&!paused){autosaveClock+=dt;if(autosaveClock>=8){saveProgress();autosaveClock=0}}
+ if(started&&!paused&&$('case').style.display!=='block'){
   camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
   const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),v=new THREE.Vector3();
   if(!hiding){if(keys.KeyW)v.add(f);if(keys.KeyS)v.sub(f);if(keys.KeyD)v.add(r);if(keys.KeyA)v.sub(r);if(v.lengthSq()){const n=v.normalize().multiplyScalar(3.4*dt);movePlayer(n.x,n.z);if(audioCtx&&audioCtx.state==='running'&&performance.now()-lastFootstep>390){playFootstep();lastFootstep=performance.now()}}
