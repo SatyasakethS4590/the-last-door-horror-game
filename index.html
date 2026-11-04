@@ -371,4 +371,4 @@ function animate(){
  if(cinematicActive){updateCinematic(dt);renderer.render(cinematicScene,cinematicCamera)}else{renderer.render(scene,camera)}
 }
 animate();addEventListener('resize',()=>{if(cinematicCamera){cinematicCamera.aspect=innerWidth/innerHeight;cinematicCamera.updateProjectionMatrix()}camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-</script><script>if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script></body></html>
+</script><script>if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=4',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{}));</script></body></html>
