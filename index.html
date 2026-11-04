@@ -147,9 +147,13 @@ function makeGhost(color,pos,speed,kind){
 }
 const ghosts=[makeGhost(0xb8c7d4,new THREE.Vector3(-12,0,-12),.7,'stalker'),makeGhost(0x9fb8c9,new THREE.Vector3(0,5.2,-12),.85,'investigator'),makeGhost(0xc8c4dc,new THREE.Vector3(12,5.2,-12),.65,'vanisher'),makeGhost(0xb8b0a0,new THREE.Vector3(-12,10.4,0),.9,'ambusher'),makeGhost(0xd9e7f5,new THREE.Vector3(12,10.4,0),1.05,'keeper')];
 const keys={};let started=false,flashOn=true,hiding=false,hideSpot=null,solved=0,yaw=0,pitch=0,beat=0,currentFloor=0,currentRoom=null;const clock=new THREE.Clock();const $=id=>document.getElementById(id);
-let audioCtx=null,ambientGain=null,lastHeartbeat=0;
+let audioCtx=null,ambientGain=null,lastHeartbeat=0,lastFootstep=0,lastWhisper=0;
 function startAudio(){if(audioCtx){audioCtx.resume();return}const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=new AC();const osc=audioCtx.createOscillator(),filter=audioCtx.createBiquadFilter();ambientGain=audioCtx.createGain();osc.type='sine';osc.frequency.value=47;filter.type='lowpass';filter.frequency.value=110;ambientGain.gain.value=.035;osc.connect(filter);filter.connect(ambientGain);ambientGain.connect(audioCtx.destination);osc.start()}
+function noiseSound(duration,frequency,gainValue){if(!audioCtx)return;const now=audioCtx.currentTime,buffer=audioCtx.createBuffer(1,Math.ceil(audioCtx.sampleRate*duration),audioCtx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);const source=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();source.buffer=buffer;filter.type='bandpass';filter.frequency.value=frequency;filter.Q.value=.7;gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(gainValue,now+.025);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);source.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);source.start(now);source.stop(now+duration)}
 function heartbeat(){if(!audioCtx)return;const now=audioCtx.currentTime,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sine';osc.frequency.setValueAtTime(62,now);osc.frequency.exponentialRampToValueAtTime(38,now+.12);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.11,now+.025);gain.gain.exponentialRampToValueAtTime(.0001,now+.19);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+.2)}
+function playFootstep(){noiseSound(.13,115,.075)}
+function playWhisper(){noiseSound(.65,720,.035)}
+function playDoorCreak(){if(!audioCtx)return;const now=audioCtx.currentTime,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sawtooth';osc.frequency.setValueAtTime(115,now);osc.frequency.exponentialRampToValueAtTime(58,now+.9);gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.045,now+.12);gain.gain.exponentialRampToValueAtTime(.0001,now+1);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+1);noiseSound(.75,260,.025)}
 const lamp=new THREE.SpotLight(0xd9e8ff,3,24,Math.PI/7,.45);camera.add(lamp);camera.add(lamp.target);lamp.target.position.set(0,0,-1);scene.add(camera);
 function say(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>$('message').style.opacity=0,3400)}
 function refresh(){ $('caseText').innerHTML='<p><b>MEMORIES: '+solved+'/5</b></p>'+labels.map((x,i)=>'<p><b>'+(clueObjects[i].found?'✓ ':'? ')+x+'</b><br>'+(clueObjects[i].found?clueObjects[i].story:'Not discovered yet.')+'</p>').join('')+'<hr><p>FLOOR 1: 9 rooms · FLOOR 2: 9 rooms · FLOOR 3: 7 rooms</p>'}
@@ -179,7 +183,7 @@ addEventListener('keydown',e=>{
   if(currentFloor===0&&nearPosition(studyRoom.x,studyRoom.z,2.8)&&puzzleSolved&&!hasArchiveKey&&nearPosition(studyRoom.x+2,studyRoom.z,2.5)){hasArchiveKey=true;keyMesh.visible=false;saveProgress();say('You collected the old archive key.');return}
   if(currentFloor===2&&nearPosition(archiveRoom.x,archiveRoom.z+5.7,3)){
    if(!hasArchiveKey){say('The archive is locked. Find the key hidden in the study.');return}
-   archiveDoor.visible=false;archiveUnlocked=true;const idx=wallSegments.indexOf(archiveDoorCollision);if(idx>=0)wallSegments.splice(idx,1);saveProgress();say('The archive door unlocks with a quiet click.');return
+   archiveDoor.visible=false;archiveUnlocked=true;playDoorCreak();const idx=wallSegments.indexOf(archiveDoorCollision);if(idx>=0)wallSegments.splice(idx,1);saveProgress();say('The archive door unlocks with a quiet click.');return
   }
   const near=clueObjects.findIndex(c=>!c.found&&camera.position.distanceTo(c.mesh.position)<2.5);
   if(near>=0){if(near===4&&solved<4){say('The portrait is sealed. Find the four family memories first.');return}clueObjects[near].found=true;clueObjects[near].mesh.visible=false;solved++;saveProgress();if(near<4){ghosts[near].active=true;ghosts[near].mesh.visible=true}else ghosts[4].active=true;refresh();say(clueObjects[near].story);$('task').textContent=solved===5?'OBJECTIVE: Return to the final room':'OBJECTIVE: Family memories '+solved+'/5';return}
@@ -197,7 +201,7 @@ function animate(){
  if(started&&$('case').style.display!=='block'){
   camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
   const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),v=new THREE.Vector3();
-  if(!hiding){if(keys.KeyW)v.add(f);if(keys.KeyS)v.sub(f);if(keys.KeyD)v.add(r);if(keys.KeyA)v.sub(r);if(v.lengthSq()){const n=v.normalize().multiplyScalar(3.4*dt);movePlayer(n.x,n.z)}
+  if(!hiding){if(keys.KeyW)v.add(f);if(keys.KeyS)v.sub(f);if(keys.KeyD)v.add(r);if(keys.KeyA)v.sub(r);if(v.lengthSq()){const n=v.normalize().multiplyScalar(3.4*dt);movePlayer(n.x,n.z);if(audioCtx&&audioCtx.state==='running'&&performance.now()-lastFootstep>390){playFootstep();lastFootstep=performance.now()}}
    
   }
   const room=roomAt(currentFloor,camera.position.x,camera.position.z);
@@ -234,7 +238,7 @@ function animate(){
    g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);
    if(!hiding&&d<1.2){g.recovering=true;g.mesh.visible=false;camera.position.set(-12,currentFloor*5.2+1.65,-12);say('The spirit rushes past. You awaken near the staircase.');g.mesh.position.copy(g.home);g.investigateClock=0;g.vanishClock=5;g.ambushClock=12;setTimeout(()=>{g.mesh.visible=true;g.recovering=false},3500)}
   });
-  if(hiding&&hideSpot){const searcher=ghosts.some(g=>g.active&&g.mesh.visible&&g.searching);$('hideStatus').textContent=searcher?'HIDDEN — A SPIRIT IS SEARCHING NEARBY':'HIDDEN — STAY QUIET · PRESS E TO LEAVE'}if(nearest<9){beat-=dt;if(beat<=0){say(nearest<3?'Your heartbeat pounds in the silence.':'You hear a faint whisper nearby.');beat=THREE.MathUtils.mapLinear(Math.min(nearest,9),9,1,1.25,.38);if(performance.now()-lastHeartbeat>220){heartbeat();lastHeartbeat=performance.now()}}$('pulse').style.boxShadow='inset 0 0 '+Math.round((9-nearest)*5)+'px rgba(130,0,20,.32)'}else $('pulse').style.boxShadow='none';
+  if(hiding&&hideSpot){const searcher=ghosts.some(g=>g.active&&g.mesh.visible&&g.searching);$('hideStatus').textContent=searcher?'HIDDEN — A SPIRIT IS SEARCHING NEARBY':'HIDDEN — STAY QUIET · PRESS E TO LEAVE'}if(nearest<9){if(nearest<7&&audioCtx&&audioCtx.state==='running'&&performance.now()-lastWhisper>4200){playWhisper();lastWhisper=performance.now()}beat-=dt;if(beat<=0){say(nearest<3?'Your heartbeat pounds in the silence.':'You hear a faint whisper nearby.');beat=THREE.MathUtils.mapLinear(Math.min(nearest,9),9,1,1.25,.38);if(performance.now()-lastHeartbeat>220){heartbeat();lastHeartbeat=performance.now()}}$('pulse').style.boxShadow='inset 0 0 '+Math.round((9-nearest)*5)+'px rgba(130,0,20,.32)'}else $('pulse').style.boxShadow='none';
  }
  renderer.render(scene,camera);
 }
