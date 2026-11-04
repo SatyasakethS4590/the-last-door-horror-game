@@ -84,7 +84,7 @@ for(let i=0;i<rainCount;i++){const edge=i%4;rainPositions[i*3]=edge<2?(edge===0?
 const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));const rain=new THREE.Points(rainGeometry,new THREE.PointsMaterial({color:0x9bb4c8,size:.055,transparent:true,opacity:.48,depthWrite:false}));scene.add(rain);
 const stormLight=new THREE.PointLight(0x718ba8,0,32);stormLight.position.set(-19,13,-19);scene.add(stormLight);let stormClock=0;
 // Hide spots: wardrobes placed in selected bedrooms and the old servant room.
-const hideSpots=[[0,6],[1,0],[1,1],[1,2],[2,3]].map(([floor,index])=>{
+const hideSpots=[[0,2],[0,6],[0,7],[1,0],[1,1],[1,2],[1,4],[2,3],[2,6]].map(([floor,index])=>{
  const r=roomDefs.find(q=>q.floor===floor&&q.index===index);
  const wardrobe=box(r.x+4,r.y+1.25,r.z+1,1.25,2.5,.8,mat(0x211b19));
  box(r.x+4,r.y+1.25,r.z+.57,.08,2.35,.08,mat(0x6a5036));
@@ -299,10 +299,10 @@ function animate(){
    g.searchCooldown=Math.max(0,g.searchCooldown-dt);
    if(hiding&&hideSpot&&hideSpot.floor===currentFloor&&g.searchCooldown<=0){
     const hd=Math.hypot(g.mesh.position.x-hideSpot.x,g.mesh.position.z-hideSpot.z);
-    if(!g.searching&&hd<11){g.searching=true;g.searchTime=0;say('Something is searching the room outside.');}
+    if(!g.searching&&hd<11){g.searching=true;g.searchTime=0;g.searchWarning=false;say('Something is searching the room outside.');}
     if(g.searching){
      if(hd>1.8){const sx=hideSpot.x-g.mesh.position.x,sz=hideSpot.z-g.mesh.position.z,sl=Math.hypot(sx,sz)||1;g.mesh.position.x+=sx/sl*g.speed*.55*dt;g.mesh.position.z+=sz/sl*g.speed*.55*dt;}
-     else{g.searchTime+=dt;if(g.searchTime>3.5){g.searching=false;g.searchTime=0;g.searchCooldown=12;g.mesh.position.copy(g.home);say('The footsteps slowly fade away.');}}
+     else{g.searchTime+=dt;if(hd<3&&!g.searchWarning){g.searchWarning=true;say('The wardrobe creaks as the spirit pauses nearby.');}if(g.searchTime>4.5){g.searching=false;g.searchTime=0;g.searchWarning=false;g.searchCooldown=14;g.mesh.position.copy(g.home);say('The footsteps slowly fade away.');}}
     }
    }else if(!hiding){g.searching=false;g.searchTime=0;}
    if(g.kind==='vanisher'){
@@ -330,7 +330,7 @@ function animate(){
    g.mesh.lookAt(camera.position.x,g.mesh.position.y+1,camera.position.z);
    if(!hiding&&d<1.2){g.recovering=true;g.mesh.visible=false;camera.position.set(-12,currentFloor*5.2+1.65,-12);say('The spirit rushes past. You awaken near the staircase.');g.mesh.position.copy(g.home);g.investigateClock=0;g.vanishClock=5;g.ambushClock=12;setTimeout(()=>{g.mesh.visible=true;g.recovering=false},3500)}
   });
-  if(hiding&&hideSpot){const searcher=ghosts.some(g=>g.active&&g.mesh.visible&&g.searching);$('hideStatus').textContent=searcher?'HIDDEN — A SPIRIT IS SEARCHING NEARBY':'HIDDEN — STAY QUIET · PRESS E TO LEAVE'}const band=nearest<3?3:nearest<6?2:nearest<9?1:0;if(band!==threatBand){threatBand=band;if(band===3)say('It is very close. Stay calm and keep hidden.');else if(band===2)say('A spirit is getting closer.');else if(band===1)say('You sense something nearby.');}if(nearest<9){if(nearest<7&&audioCtx&&audioCtx.state==='running'&&performance.now()-lastWhisper>4200){playWhisper(ghosts.find(g=>g.active&&g.mesh.visible&&g.mesh.position.distanceTo(camera.position)<7)?.kind||'stalker');lastWhisper=performance.now()}beat-=dt;if(beat<=0){const proximity=1-Math.min(nearest,9)/9;beat=1.35-proximity*.93;if(audioCtx&&audioCtx.state==='running'&&performance.now()-lastHeartbeat>220){heartbeat(.045+proximity*.13);lastHeartbeat=performance.now()}}const glow=Math.round((9-nearest)*7);$('pulse').style.boxShadow='inset 0 0 '+glow+'px rgba(150,0,24,'+(.12+(.88-nearest/10)*.22)+')'}else{$('pulse').style.boxShadow='none';beat=0;}
+  if(hiding&&hideSpot){const searcher=ghosts.find(g=>g.active&&g.mesh.visible&&g.searching&&Math.round(g.mesh.position.y/5.2)===currentFloor);const searchDistance=searcher?Math.hypot(searcher.mesh.position.x-hideSpot.x,searcher.mesh.position.z-hideSpot.z):99;$('hideStatus').textContent=searcher?(searchDistance<3?'HIDDEN — THE SPIRIT IS RIGHT OUTSIDE':'HIDDEN — A SPIRIT IS SEARCHING'):'HIDDEN — STAY QUIET · PRESS E TO LEAVE'}const band=nearest<3?3:nearest<6?2:nearest<9?1:0;if(band!==threatBand){threatBand=band;if(band===3)say('It is very close. Stay calm and keep hidden.');else if(band===2)say('A spirit is getting closer.');else if(band===1)say('You sense something nearby.');}if(nearest<9){if(nearest<7&&audioCtx&&audioCtx.state==='running'&&performance.now()-lastWhisper>4200){playWhisper(ghosts.find(g=>g.active&&g.mesh.visible&&g.mesh.position.distanceTo(camera.position)<7)?.kind||'stalker');lastWhisper=performance.now()}beat-=dt;if(beat<=0){const proximity=1-Math.min(nearest,9)/9;beat=1.35-proximity*.93;if(audioCtx&&audioCtx.state==='running'&&performance.now()-lastHeartbeat>220){heartbeat(.045+proximity*.13);lastHeartbeat=performance.now()}}const glow=Math.round((9-nearest)*7);$('pulse').style.boxShadow='inset 0 0 '+glow+'px rgba(150,0,24,'+(.12+(.88-nearest/10)*.22)+')'}else{$('pulse').style.boxShadow='none';beat=0;}
  }
  renderer.render(scene,camera);
 }
